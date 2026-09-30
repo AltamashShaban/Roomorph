@@ -1,14 +1,17 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { showAlert } from '@/components/dialog';
 
 import { Screen, Txt } from '@/components/ui';
 import { isLiveAI, OPENAI_MODEL } from '@/lib/generate';
+import { TAB_BAR_SPACE } from '@/components/pill-tab-bar';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
-const soon = (what: string) => () => Alert.alert(what, 'Coming in the full build — not part of the prototype.');
+const soon = (what: string) => () => showAlert(what, 'Coming in the full build — not part of the prototype.');
 
 export default function Settings() {
   const { credits, addCredits, resetOnboarding, resetAll } = useAppStore();
@@ -34,7 +37,7 @@ export default function Settings() {
             label="Delete account"
             danger
             onPress={() =>
-              Alert.alert('Delete account?', 'In the prototype this wipes all local data and history.', [
+              showAlert('Delete account?', 'In the prototype this wipes all local data and history.', [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Delete', style: 'destructive', onPress: resetAll },
               ])
@@ -48,7 +51,7 @@ export default function Settings() {
             label="AI mode"
             detail={isLiveAI() ? `Live · ${OPENAI_MODEL}` : 'Mock'}
             onPress={() =>
-              Alert.alert(
+              showAlert(
                 'AI mode',
                 isLiveAI()
                   ? 'Live mode: generations call OpenAI directly using the key in .env. Prototype only — never ship a key inside the app.'
@@ -106,7 +109,7 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
+  body: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: TAB_BAR_SPACE },
   group: { backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   row: {
     flexDirection: 'row',

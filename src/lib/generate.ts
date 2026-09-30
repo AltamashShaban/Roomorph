@@ -7,11 +7,12 @@
  * Edge Function (auth + credits + moderation), and the app calls that instead.
  *
  * Without a key, the app runs in MOCK mode: it waits a few seconds and returns
- * your own photo with a style-coloured tint so the whole flow can be demoed.
+ * the style's sample photo so the whole flow can be demoed.
  */
-import { QUALITY, type Quality } from '@/config/room-types';
+import { QUALITY, type Quality } from '@/config/options';
 import { buildPrompt } from '@/lib/prompt';
 import { readBase64, writeBase64Image } from '@/lib/image';
+import { toLocalUri } from '@/lib/image-source';
 
 export const OPENAI_MODEL = 'gpt-image-2'; // verified against OpenAI docs, Sept 2026
 const API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -23,7 +24,6 @@ export type GenerateInput = {
   photoUri: string;
   width: number;
   height: number;
-  roomType: string;
   styleId: string;
   userPrompt?: string;
   quality: Quality;
@@ -39,11 +39,11 @@ export async function generateRedesign(input: GenerateInput): Promise<GenerateOu
 
   if (!isLiveAI()) {
     await sleep(4500, input.signal);
-    return { afterUri: input.photoUri, mock: true, latencyMs: Date.now() - started };
+    return { afterUri: `sample:${input.styleId}`, mock: true, latencyMs: Date.now() - started };
   }
 
-  const prompt = buildPrompt(input.roomType, input.styleId, input.userPrompt);
-  const base64 = await readBase64(input.photoUri);
+  const prompt = buildPrompt(input.styleId, input.userPrompt);
+  const base64 = await readBase64(await toLocalUri(input.photoUri));
   const landscape = input.width >= input.height;
 
   let res: Response;

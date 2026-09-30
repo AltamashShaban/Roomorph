@@ -3,10 +3,14 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+
+import { showAlert } from '@/components/dialog';
 
 import { Button, Header, Screen, Txt } from '@/components/ui';
+import { SAMPLE_ROOM_URI } from '@/config/styles';
 import { prepareImage } from '@/lib/image';
+import { imageSource } from '@/lib/image-source';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
@@ -27,18 +31,18 @@ export default function Capture() {
       const img = await prepareImage(asset.uri, asset.width, asset.height);
       updateDraft({ photoUri: img.uri, width: img.width, height: img.height });
     } catch {
-      Alert.alert('Could not use that photo', 'Please try another one.');
+      showAlert('Could not use that photo', 'Please try another one.');
     } finally {
       setBusy(false);
     }
   };
 
   const takePhoto = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    const perm = Platform.OS === 'web' ? { granted: true } : await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Camera access needed', 'Allow camera access to photograph your room.', [
+      showAlert('Camera access needed', 'Allow camera access to photograph your room.', [
         { text: 'Not now', style: 'cancel' },
-        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        { text: 'Open Settings', onPress: () => void Linking.openSettings() },
       ]);
       return;
     }
@@ -51,11 +55,13 @@ export default function Capture() {
     if (!res.canceled) handleAsset(res.assets[0]);
   };
 
+  const useSample = () => updateDraft({ photoUri: SAMPLE_ROOM_URI, width: 1254, height: 1254 });
+
   const hasPhoto = !!draft.photoUri;
 
   return (
     <Screen>
-      <Header step="Step 1 of 4" />
+      <Header step={draft.presetStyle ? 'Step 1 of 2' : 'Step 1 of 3'} />
       <View style={styles.body}>
         <Txt variant="h1">{hasPhoto ? 'Looking good' : 'Capture your room'}</Txt>
         <Txt variant="small" style={{ marginTop: spacing.sm }}>
@@ -64,7 +70,7 @@ export default function Capture() {
 
         <View style={styles.frame}>
           {hasPhoto ? (
-            <Image source={{ uri: draft.photoUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image source={imageSource(draft.photoUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : (
             <>
               {/* Framing guide: rule-of-thirds grid + corner marks */}
@@ -88,7 +94,13 @@ export default function Capture() {
         <View style={styles.tips}>
           {TIPS.map(([icon, text]) => (
             <View key={text} style={styles.tip}>
-              <Feather name={icon as any} size={16} color={colors.accent} />
+              <Feather
+                  name={icon as any}
+                  size={16}
+                  color={colors.accent}
+                  // landscape phone for the "hold horizontally" tip
+                  style={icon === 'smartphone' ? { transform: [{ rotate: '90deg' }] } : undefined}
+                />
               <Txt variant="small" style={{ fontSize: 12, textAlign: 'center' }}>
                 {text}
               </Txt>
@@ -100,7 +112,7 @@ export default function Capture() {
       <View style={styles.footer}>
         {hasPhoto ? (
           <>
-            <Button title="Continue" onPress={() => router.push('/create/room-type')} />
+            <Button title="Continue" onPress={() => router.push(draft.presetStyle && draft.styleId ? '/create/details' : '/create/style')} />
             <View style={styles.row}>
               <Button title="Retake" variant="secondary" icon="camera" onPress={takePhoto} style={{ flex: 1 }} />
               <Button title="Gallery" variant="secondary" icon="image" onPress={pickPhoto} style={{ flex: 1 }} />
@@ -110,6 +122,7 @@ export default function Capture() {
           <>
             <Button title="Take a photo" icon="camera" onPress={takePhoto} loading={busy} />
             <Button title="Choose from gallery" variant="secondary" icon="image" onPress={pickPhoto} disabled={busy} />
+            <Button title="Use a sample room" variant="ghost" onPress={useSample} disabled={busy} />
           </>
         )}
       </View>

@@ -1,25 +1,29 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BeforeAfterSlider } from '@/components/before-after-slider';
-import { DRAB, RoomIllustration, WARM } from '@/components/room-illustration';
-import { Button, Ornament, Screen, Txt } from '@/components/ui';
-import { STYLES } from '@/config/styles';
+import { Image } from 'expo-image';
+import { Wordmark } from '@/components/logo';
+import { Button, Screen, Txt } from '@/components/ui';
+import { getStyle, SAMPLE_ROOM, STYLES } from '@/config/styles';
 import { useAppStore } from '@/store/app-store';
-import { colors, fonts, radii, spacing } from '@/theme';
+import { colors, radii, spacing } from '@/theme';
 
 const PAGES = 3;
+const BRAND_LIVING = require('../../assets/brand/living.jpg');
 
 export default function Onboarding() {
-  const { width } = useWindowDimensions();
   const scroller = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
-  const [pageH, setPageH] = useState(0);
+  // Pages match the scroller's own size (not the window), so they fit any frame.
+  const [{ width, height: pageH }, setSize] = useState({ width: 0, height: 0 });
   const { completeOnboarding } = useAppStore();
 
+  const lock = useRef(0);
   const goTo = (i: number) => {
+    lock.current = Date.now() + 700; // ignore scroll events from the programmatic scroll
     setPage(i);
     scroller.current?.scrollTo({ x: i * width, animated: true });
   };
@@ -31,7 +35,7 @@ export default function Onboarding() {
   };
 
   return (
-    <Screen style={{ backgroundColor: page === 0 ? colors.surfaceAlt : colors.background }}>
+    <Screen style={{ backgroundColor: colors.background }}>
       <View style={styles.topBar}>
         {page < PAGES - 1 ? (
           <Pressable onPress={() => finish(false)} hitSlop={10}>
@@ -49,28 +53,25 @@ export default function Onboarding() {
         horizontal
         pagingEnabled
         style={{ flex: 1 }}
-        onLayout={(e) => setPageH(e.nativeEvent.layout.height)}
+        onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={32}
         onScroll={(e) => {
-          const i = Math.round(e.nativeEvent.contentOffset.x / width);
+          if (Date.now() < lock.current) return;
+          const i = width ? Math.round(e.nativeEvent.contentOffset.x / width) : 0;
           if (i !== page) setPage(i);
         }}>
         {/* 1 — Brand */}
         <View style={[styles.page, { width, height: pageH }]}>
           <View style={styles.center}>
-            <Txt style={styles.monogram}>rm</Txt>
-            <Txt variant="display" style={{ fontSize: 60, lineHeight: 62, textAlign: 'center' }}>
-              roomorph
-            </Txt>
-            <Ornament />
-            <Txt variant="label" style={{ color: colors.muted, textAlign: 'center', lineHeight: 20 }}>
-              Your room,{'\n'}beautifully reimagined
-            </Txt>
+            <Wordmark width={170} />
           </View>
           <View style={styles.heroArt}>
-            <RoomIllustration palette={WARM} />
+            <Image source={BRAND_LIVING} style={{ flex: 1 }} contentFit="cover" />
           </View>
+          <Txt variant="small" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
+            Redesign any room in your home with AI.
+          </Txt>
         </View>
 
         {/* 2 — Before / after demo */}
@@ -84,8 +85,8 @@ export default function Onboarding() {
           <BeforeAfterSlider
             aspectRatio={4 / 5}
             initial={0.55}
-            before={<RoomIllustration palette={DRAB} />}
-            after={<RoomIllustration palette={WARM} />}
+            before={<Image source={SAMPLE_ROOM} style={{ width: '100%', height: '100%' }} contentFit="cover" />}
+            after={<Image source={getStyle('retro')!.image} style={{ width: '100%', height: '100%' }} contentFit="cover" />}
           />
           <View style={styles.hint}>
             <Feather name="move" size={14} color={colors.muted} />
@@ -103,7 +104,7 @@ export default function Onboarding() {
           </Txt>
           {[
             { icon: 'camera', title: 'Snap your space', text: 'Take a photo or pick one from your gallery.' },
-            { icon: 'layers', title: 'Choose a style', text: `${STYLES.length} styles — Japandi to Mughal, Coastal to Art Deco.` },
+            { icon: 'layers', title: 'Choose a style', text: `${STYLES.length} looks, from Japandi and Scandinavian to Retro and Gaming.` },
             { icon: 'star', title: 'See it transformed', text: 'Your room, redesigned in under a minute.' },
           ].map((step, i) => (
             <View key={step.title} style={styles.step}>
@@ -137,11 +138,11 @@ export default function Onboarding() {
         ) : (
           <Button title="Take a photo" icon="camera" onPress={() => finish(true)} />
         )}
-        <Pressable onPress={() => finish(false)} style={{ alignItems: 'center', paddingVertical: spacing.md }}>
-          <Txt variant="label" style={{ color: page === PAGES - 1 ? colors.text : 'transparent' }}>
-            Explore first
-          </Txt>
-        </Pressable>
+        {page === PAGES - 1 ? (
+          <Button title="Explore first" variant="secondary" onPress={() => finish(false)} />
+        ) : (
+          <View style={{ height: 54 }} />
+        )}
       </View>
     </Screen>
   );
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
   topBar: { height: 44, paddingHorizontal: spacing.xl, alignItems: 'flex-end', justifyContent: 'center' },
   page: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   center: { alignItems: 'center', marginTop: spacing.xxl },
-  monogram: { fontFamily: fonts.serifItalic, fontSize: 26, color: colors.taupe, marginBottom: spacing.lg },
   heroArt: {
     flex: 1,
     marginTop: spacing.xxl,
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
-  dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginBottom: spacing.lg },
+  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.md },
+  dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginBottom: spacing.sm },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.taupe, opacity: 0.4 },
   dotActive: { width: 18, opacity: 1, backgroundColor: colors.ink },
 });

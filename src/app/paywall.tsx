@@ -5,11 +5,14 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { RoomIllustration, WARM } from '@/components/room-illustration';
+import { showAlert } from '@/components/dialog';
+
+import { Image } from 'expo-image';
+
 import { Button, Ornament, Screen, Txt } from '@/components/ui';
-import { CREDIT_PACKS, QUALITY } from '@/config/room-types';
+import { CREDIT_PACKS, QUALITY } from '@/config/options';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
@@ -20,13 +23,13 @@ export default function Paywall() {
 
   const buy = () => {
     addCredits(pack.credits);
-    Alert.alert('Mock purchase', `${pack.credits} credits added. (No real payment in the prototype.)`, [
+    showAlert('Mock purchase', `${pack.credits} credits added. (No real payment in the prototype.)`, [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };
 
   return (
-    <Screen style={{ backgroundColor: colors.surfaceAlt }}>
+    <Screen>
       <View style={styles.close}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close">
           <Feather name="x" size={22} color={colors.text} />
@@ -35,7 +38,7 @@ export default function Paywall() {
 
       <View style={styles.body}>
         <View style={styles.art}>
-          <RoomIllustration palette={WARM} />
+          <Image source={require('../../assets/brand/dining.jpg')} style={{ width: '100%', height: '100%' }} contentFit="cover" />
         </View>
         <Txt variant="h1" style={{ textAlign: 'center', marginTop: spacing.xl }}>
           {credits === 0 ? 'You’re out of credits' : 'More rooms,\nmore ideas'}
@@ -75,7 +78,7 @@ export default function Paywall() {
       <View style={styles.footer}>
         <Button title={`Get ${pack.credits} credits · ${pack.price}`} onPress={buy} />
         <View style={styles.legal}>
-          <Pressable onPress={() => Alert.alert('Restore purchases', 'Coming in the full build.')}>
+          <Pressable onPress={() => showAlert('Restore purchases', 'Coming in the full build.')}>
             <Txt variant="small" style={{ fontSize: 12 }}>
               Restore purchases
             </Txt>

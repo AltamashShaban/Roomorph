@@ -1,0 +1,42 @@
+/* Web prototype only: centres the app in a phone-sized frame on desktop. Injected into dist/index.html by scripts/prepare-pages.mjs. */
+  /* Layout: the app runs full-bleed on phones; on wider screens it sits in a centred phone-sized frame. */
+  /* Single light look on purpose — it mirrors the app's own warm, light palette. */
+  :root {
+    --page: #E4DBCE;
+    --app: #F6F2EC;
+    --edge: #D6CBBB;
+    --ink: #2B2622;
+    --muted: #8A8076;
+    color-scheme: light;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--page); color: var(--ink); overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+  #root { display: flex; flex: 1; height: 100%; max-width: 440px; margin: 0 auto; background: var(--app); position: relative; overflow: hidden; }
+  @media (min-width: 600px) and (min-height: 700px) {
+    #root {
+      height: min(900px, calc(100vh - 48px));
+      margin-top: max(24px, calc((100vh - 900px) / 2));
+      border-radius: 32px;
+      border: 1px solid var(--edge);
+      box-shadow: 0 30px 80px rgba(58, 46, 34, 0.18), 0 4px 14px rgba(58, 46, 34, 0.08);
+    }
+  }
+  /* Keep pop-ups (sheets, dialogs) inside the phone-sized app, not across the whole window. */
+  @media (min-width: 441px) {
+    body > div:not([id]) > div {
+      left: 50% !important;
+      right: auto !important;
+      width: 440px !important;
+      transform: translateX(-50%);
+      overflow: hidden;
+    }
+  }
+  @media (min-width: 600px) and (min-height: 700px) {
+    body > div:not([id]) > div {
+      top: max(24px, calc((100vh - 900px) / 2)) !important;
+      bottom: auto !important;
+      height: min(900px, calc(100vh - 48px)) !important;
+      border-radius: 32px;
+    }
+  }
+  #boot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font: 600 11px/1 system-ui, sans-serif; letter-spacing: 0.16em; text-transform: uppercase; }

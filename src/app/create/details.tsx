@@ -3,9 +3,10 @@ import { router } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Chip, Header, Screen, Txt } from '@/components/ui';
-import { getRoomType, PROMPT_SUGGESTIONS, QUALITY, type Quality } from '@/config/room-types';
+import { PROMPT_SUGGESTIONS, QUALITY, type Quality } from '@/config/options';
 import { getStyle } from '@/config/styles';
 import { MAX_USER_PROMPT } from '@/lib/prompt';
+import { imageSource } from '@/lib/image-source';
 import { useAppStore } from '@/store/app-store';
 import { colors, fonts, radii, spacing, type } from '@/theme';
 
@@ -14,7 +15,6 @@ export default function Details() {
   const prompt = draft.userPrompt ?? '';
   const cost = QUALITY[draft.quality].credits;
   const style = getStyle(draft.styleId);
-  const room = getRoomType(draft.roomType);
 
   const addSuggestion = (s: string) => {
     const next = prompt ? `${prompt.replace(/[,\s]+$/, '')}, ${s.toLowerCase()}` : s;
@@ -28,23 +28,23 @@ export default function Details() {
 
   return (
     <Screen>
-      <Header step="Step 4 of 4" />
+      <Header step={draft.presetStyle ? 'Step 2 of 2' : 'Step 3 of 3'} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <Txt variant="h1">Final touches</Txt>
 
           {/* Summary */}
           <View style={styles.summary}>
-            {draft.photoUri && <Image source={{ uri: draft.photoUri }} style={styles.thumb} contentFit="cover" />}
+            {draft.photoUri && <Image source={imageSource(draft.photoUri)} style={styles.thumb} contentFit="cover" />}
             <View style={{ flex: 1 }}>
               <Txt variant="label" style={{ color: colors.muted }}>
-                {room?.name}
+                Your style
               </Txt>
               <Txt variant="h3" style={{ marginTop: 2 }}>
                 {style?.name}
               </Txt>
             </View>
-            <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Pressable onPress={() => router.push('/create/style')} hitSlop={8}>
               <Txt variant="label" style={{ color: colors.accent }}>
                 Change
               </Txt>

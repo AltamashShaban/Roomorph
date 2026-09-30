@@ -3,12 +3,13 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { RoomIllustration, WARM } from '@/components/room-illustration';
+import { Carousel } from '@/components/carousel';
+import { LogoHorizontal } from '@/components/logo';
 import { StyleCard } from '@/components/style-card';
 import { Button, CreditBadge, Screen, SectionHeader, Txt } from '@/components/ui';
-import { getRoomType } from '@/config/room-types';
-import { FEATURED_STYLE_IDS, getStyle, STYLES } from '@/config/styles';
-import { isLiveAI } from '@/lib/generate';
+import { getStyle, STYLES } from '@/config/styles';
+import { imageSource } from '@/lib/image-source';
+import { TAB_BAR_SPACE } from '@/components/pill-tab-bar';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, shadow, spacing } from '@/theme';
 
@@ -21,16 +22,18 @@ function greeting() {
 
 export default function Home() {
   const { history, resetDraft } = useAppStore();
-  const featured = FEATURED_STYLE_IDS.map((id) => getStyle(id)!).filter(Boolean);
 
   const start = (styleId?: string) => {
-    resetDraft(styleId ? { styleId } : undefined);
+    resetDraft(styleId ? { styleId, presetStyle: true } : undefined);
     router.push('/create/capture');
   };
 
   return (
     <Screen edges={['top']}>
-      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxxl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE }} showsVerticalScrollIndicator={false}>
+        <View style={styles.brandRow}>
+          <LogoHorizontal height={30} />
+        </View>
         <View style={styles.top}>
           <View>
             <Txt variant="small">{greeting()},</Txt>
@@ -41,17 +44,9 @@ export default function Home() {
           <CreditBadge />
         </View>
 
-        {!isLiveAI() && (
-          <View style={styles.mockBanner}>
-            <Feather name="info" size={13} color={colors.accent} />
-            <Txt variant="small" style={{ flex: 1, fontSize: 12 }}>
-              Prototype · mock mode. Add an OpenAI key to generate real redesigns.
-            </Txt>
-          </View>
-        )}
-
         {/* Hero CTA */}
         <View style={[styles.hero, shadow.card]}>
+          <View style={styles.heroRow}>
           <View style={styles.heroText}>
             <Txt variant="label" style={{ color: colors.accent }}>
               New redesign
@@ -64,48 +59,40 @@ export default function Home() {
             </Txt>
           </View>
           <View style={styles.heroArt}>
-            <RoomIllustration palette={WARM} compact />
+            <Image source={require('../../../assets/brand/hero-split.jpg')} style={{ width: '100%', height: '100%' }} contentFit="cover" contentPosition="center" />
           </View>
-          <Button title="Take a photo" icon="camera" onPress={() => start()} style={{ marginTop: spacing.lg }} />
+          </View>
+          <Button title="Take a photo" icon="camera" onPress={() => start()} style={{ marginTop: spacing.xl }} />
         </View>
 
         {/* Your spaces */}
         {history.length > 0 && (
           <View style={styles.block}>
-            <View style={styles.pad}>
-              <SectionHeader title="Your spaces" action="View all" onAction={() => router.push('/history')} />
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
+            <Carousel title="Your spaces" action="View all" onAction={() => router.push('/history')}>
               {history.slice(0, 8).map((r) => (
                 <Pressable key={r.id} onPress={() => router.push(`/result/${r.id}`)} style={{ width: 150 }}>
                   <View style={styles.recentImg}>
-                    <Image source={{ uri: r.afterUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    {r.mock && (
-                      <View style={[StyleSheet.absoluteFill, { backgroundColor: getStyle(r.styleId)?.palette[1], opacity: 0.35 }]} />
-                    )}
+                    <Image source={imageSource(r.afterUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
                   </View>
                   <Txt variant="h3" style={{ fontSize: 17, marginTop: spacing.sm }} numberOfLines={1}>
-                    {getRoomType(r.roomType)?.name}
+                    {getStyle(r.styleId)?.name}
                   </Txt>
                   <Txt variant="small" numberOfLines={1}>
-                    {getStyle(r.styleId)?.name}
+                    {new Date(r.createdAt).toLocaleDateString()}
                   </Txt>
                 </Pressable>
               ))}
-            </ScrollView>
+            </Carousel>
           </View>
         )}
 
         {/* Curated styles */}
         <View style={styles.block}>
-          <View style={styles.pad}>
-            <SectionHeader title="Curated for you" action={`All ${STYLES.length}`} onAction={() => start()} />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
-            {featured.map((st) => (
+          <Carousel title="Explore styles">
+            {STYLES.map((st) => (
               <StyleCard key={st.id} item={st} onPress={() => start(st.id)} style={{ width: 150 }} />
             ))}
-          </ScrollView>
+          </Carousel>
         </View>
 
         {/* Tips */}
@@ -118,7 +105,13 @@ export default function Home() {
               ['sun', 'Use daylight and switch on the lights'],
             ].map(([icon, text]) => (
               <View key={text} style={styles.tip}>
-                <Feather name={icon as any} size={16} color={colors.accent} />
+                <Feather
+                  name={icon as any}
+                  size={16}
+                  color={colors.accent}
+                  // landscape phone for the "hold horizontally" tip
+                  style={icon === 'smartphone' ? { transform: [{ rotate: '90deg' }] } : undefined}
+                />
                 <Txt variant="small" style={{ flex: 1, color: colors.text }}>
                   {text}
                 </Txt>
@@ -132,6 +125,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   top: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -140,16 +134,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
   },
-  mockBanner: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
-    padding: spacing.md,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surfaceAlt,
-  },
   hero: {
     marginHorizontal: spacing.xl,
     padding: spacing.xl,
@@ -157,15 +141,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     overflow: 'hidden',
   },
-  heroText: { width: '58%', minHeight: 190 },
+  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  heroText: { flex: 1, paddingTop: 32 },
   heroArt: {
-    position: 'absolute',
-    right: -10,
-    top: spacing.xl,
-    width: '42%',
-    aspectRatio: 0.8,
+    width: '44%',
+    aspectRatio: 0.7,
     borderTopLeftRadius: 999,
     borderTopRightRadius: 999,
+    borderBottomLeftRadius: radii.sm,
+    borderBottomRightRadius: radii.sm,
     overflow: 'hidden',
   },
   block: { marginTop: spacing.xxl },

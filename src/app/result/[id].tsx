@@ -1,15 +1,17 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Asset, requestPermissionsAsync } from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { showAlert } from '@/components/dialog';
 
 import { BeforeAfterSlider } from '@/components/before-after-slider';
 import { Button, CreditBadge, Screen, Txt } from '@/components/ui';
-import { getRoomType, QUALITY } from '@/config/room-types';
+import { QUALITY } from '@/config/options';
 import { getStyle } from '@/config/styles';
+import { imageSource, toLocalUri } from '@/lib/image-source';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
@@ -31,32 +33,36 @@ export default function Result() {
   }
 
   const style = getStyle(r.styleId);
-  const room = getRoomType(r.roomType);
+
 
   const save = async () => {
+    if (Platform.OS === 'web') return webSaveHint();
     setSaving(true);
     try {
+      // Loaded lazily: the photo-library module only exists in the phone app.
+      const { Asset, requestPermissionsAsync } = await import('expo-media-library');
       const perm = await requestPermissionsAsync(true);
       if (!perm.granted) {
-        Alert.alert('Photos access needed', 'Allow access to save redesigns to your Photos.');
+        showAlert('Photos access needed', 'Allow access to save redesigns to your Photos.');
         return;
       }
-      await Asset.create(r.afterUri);
-      Alert.alert('Saved', 'Your redesign is in your Photos.');
+      await Asset.create(await toLocalUri(r.afterUri));
+      showAlert('Saved', 'Your redesign is in your Photos.');
     } catch {
-      Alert.alert('Could not save', 'Saving to Photos may need a development build on Android. Try Share instead.');
+      showAlert('Could not save', 'Saving to Photos may need a development build on Android. Try Share instead.');
     } finally {
       setSaving(false);
     }
   };
 
   const share = async () => {
-    if (!(await Sharing.isAvailableAsync())) return Alert.alert('Sharing is not available on this device');
-    await Sharing.shareAsync(r.afterUri, { mimeType: 'image/jpeg', dialogTitle: 'Share your redesign' });
+    if (Platform.OS === 'web') return webSaveHint();
+    if (!(await Sharing.isAvailableAsync())) return showAlert('Sharing is not available on this device');
+    await Sharing.shareAsync(await toLocalUri(r.afterUri), { mimeType: 'image/jpeg', dialogTitle: 'Share your redesign' });
   };
 
   const remove = () =>
-    Alert.alert('Delete redesign?', 'This removes it from your history.', [
+    showAlert('Delete redesign?', 'This removes it from your history.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -69,9 +75,9 @@ export default function Result() {
     ]);
 
   const report = () =>
-    Alert.alert('Report this image?', 'Let us know if this result is offensive or inappropriate.', [
+    showAlert('Report this image?', 'Let us know if this result is offensive or inappropriate.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => Alert.alert('Thanks', 'We’ll review it.') },
+      { text: 'Report', style: 'destructive', onPress: () => showAlert('Thanks', 'We’ll review it.') },
     ]);
 
   const regenerate = () => {
@@ -79,7 +85,6 @@ export default function Result() {
       photoUri: r.beforeUri,
       width: r.width,
       height: r.height,
-      roomType: r.roomType,
       styleId: r.styleId,
       userPrompt: r.userPrompt,
       quality: r.quality,
@@ -88,7 +93,7 @@ export default function Result() {
   };
 
   const anotherStyle = () => {
-    resetDraft({ photoUri: r.beforeUri, width: r.width, height: r.height, roomType: r.roomType, quality: r.quality });
+    resetDraft({ photoUri: r.beforeUri, width: r.width, height: r.height, quality: r.quality });
     router.push('/create/style');
   };
 
@@ -109,16 +114,15 @@ export default function Result() {
       <ScrollView contentContainerStyle={styles.body}>
         <BeforeAfterSlider
           aspectRatio={Math.max(0.75, Math.min(aspect, 1.6))}
-          before={<Image source={{ uri: r.beforeUri }} style={StyleSheet.absoluteFill} contentFit="cover" />}
+          before={<Image source={imageSource(r.beforeUri)} style={StyleSheet.absoluteFill} contentFit="cover" />}
           after={
             <>
-              <Image source={{ uri: r.afterUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image source={imageSource(r.afterUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
               {r.mock && (
                 <>
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: style?.palette[1], opacity: 0.4 }]} />
                   <View style={styles.mockTag}>
                     <Txt variant="label" style={{ fontSize: 9, color: colors.onInk }}>
-                      Mock preview
+                      Sample preview
                     </Txt>
                   </View>
                 </>
@@ -130,7 +134,7 @@ export default function Result() {
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
             <Txt variant="label" style={{ color: colors.accent }}>
-              {room?.name} · {QUALITY[r.quality].label}
+              {QUALITY[r.quality].label} · {new Date(r.createdAt).toLocaleDateString()}
             </Txt>
             <Txt variant="h1" style={{ marginTop: spacing.xs }}>
               {style?.name}
@@ -165,6 +169,13 @@ export default function Result() {
         </View>
       </ScrollView>
     </Screen>
+  );
+}
+
+function webSaveHint() {
+  showAlert(
+    'Save your redesign',
+    'In this web preview, right-click the image (or long-press on a phone) to save it. The app saves straight to Photos and opens the share sheet.',
   );
 }
 

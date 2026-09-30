@@ -1,11 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+
+import { showAlert } from '@/components/dialog';
 
 import { Button, CreditBadge, Screen, Txt } from '@/components/ui';
-import { getRoomType } from '@/config/room-types';
 import { getStyle } from '@/config/styles';
+import { imageSource } from '@/lib/image-source';
+import { TAB_BAR_SPACE } from '@/components/pill-tab-bar';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
@@ -13,7 +16,7 @@ export default function History() {
   const { history, deleteRedesign, resetDraft } = useAppStore();
 
   const confirmDelete = (id: string) =>
-    Alert.alert('Delete redesign?', 'This removes it from your history.', [
+    showAlert('Delete redesign?', 'This removes it from your history.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteRedesign(id) },
     ]);
@@ -59,23 +62,20 @@ export default function History() {
           numColumns={2}
           keyExtractor={(r) => r.id}
           columnWrapperStyle={{ gap: spacing.md }}
-          contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.lg }}
+          contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: TAB_BAR_SPACE, gap: spacing.lg }}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/result/${item.id}`)}
               onLongPress={() => confirmDelete(item.id)}
               style={({ pressed }) => [{ flex: 1 / 2, opacity: pressed ? 0.85 : 1 }]}>
               <View style={styles.img}>
-                <Image source={{ uri: item.afterUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                {item.mock && (
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: getStyle(item.styleId)?.palette[1], opacity: 0.35 }]} />
-                )}
+                <Image source={imageSource(item.afterUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
               </View>
               <Txt variant="h3" style={{ fontSize: 18, marginTop: spacing.sm }} numberOfLines={1}>
                 {getStyle(item.styleId)?.name}
               </Txt>
               <Txt variant="small" numberOfLines={1}>
-                {getRoomType(item.roomType)?.name} · {new Date(item.createdAt).toLocaleDateString()}
+                {new Date(item.createdAt).toLocaleDateString()}
               </Txt>
             </Pressable>
           )}

@@ -8,7 +8,6 @@
     "scheme": "roomorph",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.altamash.roomorph",
       "supportsTablet": false
     },
@@ -33,7 +32,7 @@
         {
           "backgroundColor": "#F6F2EC",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 140
         }
       ],
       [
@@ -54,7 +53,8 @@
     ],
     "experiments": {
       "typedRoutes": false,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/Roomorph"
     }
   }
 }

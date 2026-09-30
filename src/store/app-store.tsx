@@ -6,7 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { FREE_CREDITS, type Quality } from '@/config/room-types';
+import { FREE_CREDITS, type Quality } from '@/config/options';
 import { deleteImage } from '@/lib/image';
 
 export type Redesign = {
@@ -15,7 +15,7 @@ export type Redesign = {
   afterUri: string;
   width: number;
   height: number;
-  roomType: string;
+  roomType?: string; // legacy — no longer collected
   styleId: string;
   userPrompt?: string;
   quality: Quality;
@@ -27,8 +27,9 @@ export type Draft = {
   photoUri?: string;
   width?: number;
   height?: number;
-  roomType?: string;
   styleId?: string;
+  /** true when the style was picked on Home before the photo (skip the style step) */
+  presetStyle?: boolean;
   userPrompt?: string;
   quality: Quality;
 };
@@ -49,7 +50,7 @@ type Store = Persisted & {
   resetAll: () => void;
 };
 
-const KEY = 'roomorph:v1';
+const KEY = 'roomorph:v2';
 const EMPTY_DRAFT: Draft = { quality: 'standard' };
 const DEFAULTS: Persisted = { onboarded: false, credits: FREE_CREDITS, history: [] };
 

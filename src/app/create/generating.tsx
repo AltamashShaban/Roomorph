@@ -11,11 +11,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Txt } from '@/components/ui';
-import { QUALITY } from '@/config/room-types';
+import { QUALITY } from '@/config/options';
 import { getStyle } from '@/config/styles';
 import { generateRedesign, GenerationError, isLiveAI } from '@/lib/generate';
 import { persistImage } from '@/lib/image';
 import { sanitizeUserPrompt } from '@/lib/prompt';
+import { imageSource } from '@/lib/image-source';
 import { newId, useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
@@ -43,7 +44,7 @@ export default function Generating() {
 
   const run = async () => {
     setError(null);
-    if (!draft.photoUri || !draft.roomType || !draft.styleId || !draft.width || !draft.height) {
+    if (!draft.photoUri || !draft.styleId || !draft.width || !draft.height) {
       setError('Something is missing — please start again.');
       return;
     }
@@ -58,13 +59,12 @@ export default function Generating() {
     const id = newId();
     abort.current = new AbortController();
     try {
-      const beforeUri = draft.photoUri.includes('/redesigns/') ? draft.photoUri : persistImage(draft.photoUri, `${id}-before.jpg`);
+      const beforeUri = draft.photoUri.includes('/redesigns/') || draft.photoUri.startsWith('sample:') ? draft.photoUri : persistImage(draft.photoUri, `${id}-before.jpg`);
       const out = await generateRedesign({
         id,
         photoUri: beforeUri,
         width: draft.width,
         height: draft.height,
-        roomType: draft.roomType,
         styleId: draft.styleId,
         userPrompt: sanitizeUserPrompt(draft.userPrompt),
         quality: draft.quality,
@@ -76,7 +76,6 @@ export default function Generating() {
         afterUri: out.afterUri,
         width: draft.width,
         height: draft.height,
-        roomType: draft.roomType,
         styleId: draft.styleId,
         userPrompt: sanitizeUserPrompt(draft.userPrompt) || undefined,
         quality: draft.quality,
@@ -126,7 +125,7 @@ export default function Generating() {
     <Screen>
       <View style={styles.body}>
         <Animated.View style={[styles.photo, { transform: [{ scale }] }]}>
-          {draft.photoUri && <Image source={{ uri: draft.photoUri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={error ? 0 : 18} />}
+          {draft.photoUri && <Image source={imageSource(draft.photoUri)} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={error ? 0 : 18} />}
           {!error && <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(246,242,236,0.35)' }]} />}
         </Animated.View>
 

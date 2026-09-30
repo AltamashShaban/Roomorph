@@ -1,15 +1,23 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { paletteFromStyle, RoomIllustration } from '@/components/room-illustration';
+import { Image } from 'expo-image';
 import { Txt } from '@/components/ui';
 import type { InteriorStyle } from '@/config/styles';
 import { colors, radii, spacing } from '@/theme';
 
-export function StyleThumb({ style: st, aspectRatio = 1 }: { style: InteriorStyle; aspectRatio?: number }) {
+export function StyleThumb({
+  style: st,
+  aspectRatio = 1,
+  variant = 'thumb',
+}: {
+  style: InteriorStyle;
+  aspectRatio?: number;
+  variant?: 'thumb' | 'room';
+}) {
   return (
     <View style={{ aspectRatio, borderRadius: radii.md, overflow: 'hidden', backgroundColor: colors.sand }}>
-      <RoomIllustration palette={paletteFromStyle(st.palette)} compact />
+      <Image source={variant === 'room' ? st.image : st.thumb} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
     </View>
   );
 }
@@ -44,7 +52,7 @@ export function StyleCard({
         {item.name}
       </Txt>
       <Txt variant="small" numberOfLines={1}>
-        {item.category}
+        {item.description}
       </Txt>
     </Pressable>
   );

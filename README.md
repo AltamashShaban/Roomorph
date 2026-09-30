@@ -28,16 +28,16 @@ mock payments and no backend yet.
 
 ```
 src/theme.ts              ← colours, type, spacing, radii (reskin here)
-src/config/styles.ts      ← all 43 styles: name, description, AI prompt, palette
-src/config/room-types.ts  ← room types, prompt chips, quality + credit packs
+src/config/styles.ts      ← the 8 MVP styles: name, description, AI prompt, palette
+src/config/options.ts     ← prompt chips, quality + credit packs
 src/lib/prompt.ts         ← prompt assembly (moves server-side later)
 src/lib/generate.ts       ← mock / OpenAI generation
 src/store/app-store.tsx   ← credits, history, draft (local storage for now)
-src/components/           ← Button, Header, Chip, BeforeAfterSlider, StyleCard, RoomIllustration
+src/components/           ← Button, Header, Chip, BeforeAfterSlider, StyleCard, Logo
 src/app/                  ← screens (every file = a route)
   onboarding.tsx
   (tabs)/index.tsx · history.tsx · settings.tsx
-  create/capture → room-type → style → details → generating
+  create/capture → style (skipped if picked on Home) → details → generating
   result/[id].tsx
   paywall.tsx
 ```
@@ -55,3 +55,13 @@ src/app/                  ← screens (every file = a route)
 
 - **Save to Photos** on Android may not work in Expo Go (media-library restrictions). Share still works.
   A development build fixes this.
+
+## Web prototype (GitHub Pages)
+
+Every push to `main` builds the web version and publishes it with GitHub Actions
+(`.github/workflows/deploy-pages.yml`). One-time setup: repo **Settings → Pages →
+Source: GitHub Actions**. The site is served at
+`https://<your-username>.github.io/Roomorph/` — `experiments.baseUrl` in `app.json`
+must match the repo name.
+
+Build it locally with `npm run build:pages` (output in `dist/`).

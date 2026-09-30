@@ -1,49 +1,40 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StyleCard, StyleThumb } from '@/components/style-card';
-import { Button, Chip, Header, Screen, Txt } from '@/components/ui';
-import { getStyle, STYLE_CATEGORIES, STYLES, type InteriorStyle } from '@/config/styles';
+import { Button, Header, Screen, Txt } from '@/components/ui';
+import { getStyle, STYLES, type InteriorStyle } from '@/config/styles';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
 export default function StyleScreen() {
   const { draft, updateDraft } = useAppStore();
-  const [category, setCategory] = useState<string>('All');
   const [preview, setPreview] = useState<InteriorStyle | null>(null);
   const insets = useSafeAreaInsets();
 
-  const data = useMemo(() => (category === 'All' ? STYLES : STYLES.filter((s) => s.category === category)), [category]);
   const selected = getStyle(draft.styleId);
 
   const choose = (st: InteriorStyle) => {
-    updateDraft({ styleId: st.id });
+    updateDraft({ styleId: st.id, presetStyle: false });
     setPreview(null);
   };
 
   return (
     <Screen>
-      <Header step="Step 3 of 4" />
+      <Header step="Step 2 of 3" />
       <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}>
         <Txt variant="h1">Pick a style</Txt>
         <Txt variant="small" style={{ marginTop: spacing.sm }}>
-          Tap a style to learn more.
+          Tap a style to see it up close.
         </Txt>
       </View>
 
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {['All', ...STYLE_CATEGORIES].map((c) => (
-            <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
-          ))}
-        </ScrollView>
-      </View>
+      <View style={{ height: spacing.lg }} />
 
       <FlatList
-        data={data}
-        key={category}
+        data={STYLES}
         numColumns={2}
         keyExtractor={(s) => s.id}
         columnWrapperStyle={{ gap: spacing.md }}
@@ -67,10 +58,9 @@ export default function StyleScreen() {
         {preview && (
           <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
             <View style={styles.grabber} />
-            <StyleThumb style={preview} aspectRatio={16 / 10} />
+            <StyleThumb style={preview} aspectRatio={4 / 3} />
             <Txt variant="label" style={{ color: colors.accent, marginTop: spacing.lg }}>
-              {preview.category}
-              {preview.isPremium ? '  ·  Premium' : ''}
+              Style
             </Txt>
             <Txt variant="h1" style={{ marginTop: spacing.xs }}>
               {preview.name}

@@ -1,11 +1,14 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import { Platform } from 'react-native';
 
-export const MAX_EDGE = 1536;
+const IS_WEB = Platform.OS === 'web';
+// Web keeps images as data URIs in browser storage, so keep them smaller there.
+export const MAX_EDGE = IS_WEB ? 1024 : 1536;
 
 export type PreparedImage = { uri: string; width: number; height: number };
 
-/** Resize so the long edge is ≤ 1536px and re-encode as JPEG. */
+/** Resize so the long edge is ≤ MAX_EDGE and re-encode as JPEG. */
 export async function prepareImage(uri: string, width: number, height: number): Promise<PreparedImage> {
   const longEdge = Math.max(width, height);
   const ctx = ImageManipulator.manipulate(uri);
@@ -14,8 +17,9 @@ export async function prepareImage(uri: string, width: number, height: number): 
     else ctx.resize({ height: MAX_EDGE });
   }
   const rendered = await ctx.renderAsync();
-  const result = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.82 });
-  return { uri: result.uri, width: result.width, height: result.height };
+  const result = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: IS_WEB ? 0.72 : 0.82, base64: IS_WEB });
+  const out = IS_WEB && result.base64 ? `data:image/jpeg;base64,${result.base64}` : result.uri;
+  return { uri: out, width: result.width, height: result.height };
 }
 
 function photosDir() {
@@ -26,6 +30,7 @@ function photosDir() {
 
 /** Copy a (cache) image into permanent app storage so history survives restarts. */
 export function persistImage(uri: string, name: string) {
+  if (IS_WEB || uri.startsWith('sample:')) return uri; // data URI — already self-contained
   const target = new File(photosDir(), name);
   if (target.exists) target.delete();
   new File(uri).copy(target);
@@ -33,6 +38,7 @@ export function persistImage(uri: string, name: string) {
 }
 
 export function writeBase64Image(base64: string, name: string) {
+  if (IS_WEB) return `data:image/jpeg;base64,${base64}`;
   const file = new File(photosDir(), name);
   if (file.exists) file.delete();
   file.create();
@@ -41,10 +47,12 @@ export function writeBase64Image(base64: string, name: string) {
 }
 
 export async function readBase64(uri: string) {
+  if (uri.startsWith('data:')) return uri.slice(uri.indexOf(',') + 1);
   return new File(uri).base64();
 }
 
 export function deleteImage(uri?: string) {
+  if (IS_WEB || !uri || uri.startsWith('sample:')) return;
   try {
     if (!uri) return;
     const f = new File(uri);
@@ -52,4 +60,15 @@ export function deleteImage(uri?: string) {
   } catch {
     // ignore — best effort cleanup
   }
+}
+
+/** Web only: trigger a browser download of an image. */
+export function downloadOnWeb(uri: string, filename: string) {
+  if (!IS_WEB || typeof document === 'undefined') return;
+  const a = document.createElement('a');
+  a.href = uri;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
