@@ -9,7 +9,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.altamash.roomorph",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -49,7 +50,9 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-apple-authentication",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": false,

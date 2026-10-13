@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DialogHost } from '@/components/dialog';
 import { AppStoreProvider, useAppStore } from '@/store/app-store';
+import { AuthProvider, useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -36,7 +37,8 @@ if (Platform.OS === 'web' && FRESH_START_ON_WEB) {
 }
 
 function RootNavigator() {
-  const { hydrated } = useAppStore();
+  const { hydrated, onboarded } = useAppStore();
+  const auth = useAuth();
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_400Regular,
     PlayfairDisplay_400Regular_Italic,
@@ -46,7 +48,7 @@ function RootNavigator() {
     Inter_600SemiBold,
   });
 
-  const ready = hydrated && fontsLoaded;
+  const ready = hydrated && fontsLoaded && auth.ready;
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
@@ -60,6 +62,13 @@ function RootNavigator() {
     if (pathname !== '/onboarding') router.replace('/onboarding');
   }, [ready, pathname]);
 
+  // Backend: after onboarding, nothing works without an account (credits live on the server).
+  const needsSignIn = auth.enabled && !auth.session && onboarded;
+  useEffect(() => {
+    if (!ready || !needsSignIn) return;
+    if (pathname !== '/sign-in' && pathname !== '/onboarding' && pathname !== '/auth-callback') router.replace('/sign-in');
+  }, [ready, needsSignIn, pathname]);
+
   if (!ready) return null;
 
   return (
@@ -67,6 +76,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+      <Stack.Screen name="sign-in" options={{ animation: 'fade', gestureEnabled: false }} />
       <Stack.Screen name="create/generating" options={{ gestureEnabled: false, animation: 'fade' }} />
       <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
     </Stack>
@@ -78,10 +88,12 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AppStoreProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </AppStoreProvider>
+      <AuthProvider>
+        <AppStoreProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </AppStoreProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
