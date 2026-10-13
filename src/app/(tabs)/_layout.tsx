@@ -3,10 +3,13 @@ import { Tabs } from 'expo-router/js-tabs';
 
 import { PillTabBar } from '@/components/pill-tab-bar';
 import { useAppStore } from '@/store/app-store';
+import { useAuth } from '@/store/auth';
 
 export default function TabsLayout() {
   const { onboarded } = useAppStore();
+  const auth = useAuth();
   if (!onboarded) return <Redirect href="/onboarding" />;
+  if (auth.enabled && !auth.session) return <Redirect href="/sign-in" />;
 
   return (
     <Tabs

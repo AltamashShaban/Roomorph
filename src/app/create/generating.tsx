@@ -30,8 +30,9 @@ const MESSAGES = [
 ];
 
 export default function Generating() {
-  const { draft, spendCredits, addCredits, addRedesign } = useAppStore();
+  const { draft, backend, credits, spendCredits, addCredits, addRedesign, setServerCredits } = useAppStore();
   const [error, setError] = useState<string | null>(null);
+  const [refunded, setRefunded] = useState(0);
   const [msg, setMsg] = useState(0);
   const started = useRef(false);
   const abort = useRef<AbortController | null>(null);
@@ -44,11 +45,13 @@ export default function Generating() {
 
   const run = async () => {
     setError(null);
+    setRefunded(0);
     if (!draft.photoUri || !draft.styleId || !draft.width || !draft.height) {
       setError('Something is missing — please start again.');
       return;
     }
-    if (!spendCredits(cost)) {
+    // Backend: the server takes the credits; here we only check the balance we know about.
+    if (backend ? credits < cost : !spendCredits(cost)) {
       router.replace('/paywall');
       return;
     }
@@ -70,8 +73,10 @@ export default function Generating() {
         quality: draft.quality,
         signal: abort.current.signal,
       });
+      if (out.credits !== undefined) setServerCredits(out.credits);
       addRedesign({
         id,
+        remoteId: out.remoteId,
         beforeUri,
         afterUri: out.afterUri,
         width: draft.width,
@@ -86,8 +91,19 @@ export default function Generating() {
         router.replace(`/result/${id}`),
       );
     } catch (e) {
-      addCredits(cost); // automatic refund
       progress.stopAnimation();
+      if (backend) {
+        // The server refunds failed generations itself and reports the new balance.
+        if (e instanceof GenerationError && e.credits !== undefined) setServerCredits(e.credits);
+        if (e instanceof GenerationError && e.code === 'insufficient_credits') {
+          router.replace('/paywall');
+          return;
+        }
+        setRefunded(e instanceof GenerationError ? (e.refunded ?? 0) : 0);
+      } else {
+        addCredits(cost); // automatic refund
+        setRefunded(cost);
+      }
       if (e instanceof GenerationError && e.message === 'Cancelled') return;
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     }
@@ -138,9 +154,11 @@ export default function Generating() {
             <Txt variant="small" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
               {error}
             </Txt>
-            <Txt variant="label" style={{ marginTop: spacing.md, color: colors.success }}>
-              Your {cost} {cost === 1 ? 'credit was' : 'credits were'} refunded
-            </Txt>
+            {refunded > 0 && (
+              <Txt variant="label" style={{ marginTop: spacing.md, color: colors.success }}>
+                Your {refunded} {refunded === 1 ? 'credit was' : 'credits were'} refunded
+              </Txt>
+            )}
           </View>
         ) : (
           <View style={styles.text}>
