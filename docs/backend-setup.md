@@ -8,7 +8,7 @@ backend: accounts, server-side credits and history, and the AI call on the serve
 
 | Path | What it does |
 |---|---|
-| `migrations/20261013000000_init.sql` | Tables (`profiles`, `credit_ledger`, `generations`, `founding_emails`), row level security, the free-credit bonus on sign up (3, or 10 for waitlist emails), atomic credit functions, and the private `redesigns` image bucket |
+| `migrations/20261013000000_init.sql` | Tables (`profiles`, `credit_ledger`, `generations`, `founding_emails`), row level security, the free-credit bonus on sign up (2, or 10 for waitlist emails), atomic credit functions, and the private `redesigns` image bucket |
 | `functions/generate` | Checks the user, takes credits, calls OpenAI, refunds on failure, stores before/after images |
 | `functions/delete-account` | Deletes the user's images and account (required by Apple and Google) |
 | `functions/_shared/catalog.ts` | Style prompts, credit cost per quality, prompt builder. The app imports the same file |
@@ -43,7 +43,7 @@ backend: accounts, server-side credits and history, and the AI call on the serve
 ## Founding offer
 
 Add waitlist emails (lowercase) to `founding_emails` before they sign up and they
-get 10 free credits instead of 3:
+get 10 free credits instead of 2:
 
 ```sql
 insert into founding_emails (email) values ('someone@example.com') on conflict do nothing;

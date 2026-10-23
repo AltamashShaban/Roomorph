@@ -15,7 +15,7 @@ export const QUALITY = {
 };
 export type Quality = keyof typeof QUALITY;
 
-export const FREE_CREDITS = 3;
+export const FREE_CREDITS = 2;
 
 export const CREDIT_PACKS = [
   { id: 'pack_20', credits: 20, price: '$4.99', note: 'Try a few rooms' },

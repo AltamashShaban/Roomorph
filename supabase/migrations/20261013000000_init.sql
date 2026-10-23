@@ -44,7 +44,7 @@ create table public.generations (
 );
 create index generations_user_idx on public.generations (user_id, created_at desc);
 
--- Waitlist emails that get the founding offer (10 free credits instead of 3).
+-- Waitlist emails that get the founding offer (10 free credits instead of 2).
 -- Import the Netlify waitlist here before launch.
 create table public.founding_emails (
   email text primary key check (email = lower(email))
@@ -84,7 +84,7 @@ begin
   is_founding := exists (
     select 1 from public.founding_emails f where f.email = lower(coalesce(new.email, ''))
   );
-  bonus := case when is_founding then 10 else 3 end;
+  bonus := case when is_founding then 10 else 2 end;
 
   insert into public.profiles (id, credits, founding) values (new.id, bonus, is_founding);
   insert into public.credit_ledger (user_id, delta, reason)
