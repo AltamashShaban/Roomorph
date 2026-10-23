@@ -30,7 +30,7 @@ function photosDir() {
 
 /** Copy a (cache) image into permanent app storage so history survives restarts. */
 export function persistImage(uri: string, name: string) {
-  if (IS_WEB || uri.startsWith('sample:')) return uri; // data URI — already self-contained
+  if (IS_WEB || uri.startsWith('sample:') || uri.startsWith('http')) return uri; // self-contained or on the server
   const target = new File(photosDir(), name);
   if (target.exists) target.delete();
   new File(uri).copy(target);
@@ -52,7 +52,7 @@ export async function readBase64(uri: string) {
 }
 
 export function deleteImage(uri?: string) {
-  if (IS_WEB || !uri || uri.startsWith('sample:')) return;
+  if (IS_WEB || !uri || uri.startsWith('sample:') || uri.startsWith('http')) return;
   try {
     if (!uri) return;
     const f = new File(uri);

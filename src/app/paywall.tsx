@@ -17,11 +17,16 @@ import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing } from '@/theme';
 
 export default function Paywall() {
-  const { credits, addCredits } = useAppStore();
+  const { credits, backend, addCredits } = useAppStore();
   const [selected, setSelected] = useState(CREDIT_PACKS.find((p) => p.highlight)?.id ?? CREDIT_PACKS[0].id);
   const pack = CREDIT_PACKS.find((p) => p.id === selected)!;
 
   const buy = () => {
+    if (backend) {
+      // Real purchases (App Store / Google Play via RevenueCat) arrive in Phase 2.
+      showAlert('Coming soon', 'Buying credits will open in the next update. For testing, credits can be added from the Supabase dashboard.');
+      return;
+    }
     addCredits(pack.credits);
     showAlert('Mock purchase', `${pack.credits} credits added. (No real payment in the prototype.)`, [
       { text: 'OK', onPress: () => router.back() },
