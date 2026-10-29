@@ -4,7 +4,8 @@
  */
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { coverPoint, formatPrice, type ShopItem } from '@/config/shop';
 import { colors, fonts, radii } from '@/theme';

@@ -3,7 +3,8 @@
  * Usage: showAlert('Title', 'Message', [{ text: 'OK', onPress }])
  */
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { colors, radii, spacing, type } from '@/theme';
 

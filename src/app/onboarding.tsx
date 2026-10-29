@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { BeforeAfterSlider } from '@/components/before-after-slider';
 import { Image } from 'expo-image';

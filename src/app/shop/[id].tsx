@@ -6,7 +6,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { showAlert } from '@/components/dialog';
 import { ItemCrop } from '@/components/shop-hotspots';

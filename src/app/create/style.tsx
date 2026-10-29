@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StyleCard, StyleThumb } from '@/components/style-card';

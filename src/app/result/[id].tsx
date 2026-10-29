@@ -6,7 +6,8 @@ import { useState } from 'react';
 
 import { ShopHotspots } from '@/components/shop-hotspots';
 import { getShopItems } from '@/config/shop';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { showAlert } from '@/components/dialog';
 

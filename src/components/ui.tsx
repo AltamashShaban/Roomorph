@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
+import { Pressable } from '@/components/pressable';
 import { useAppStore } from '@/store/app-store';
 import { colors, radii, spacing, type } from '@/theme';
 
