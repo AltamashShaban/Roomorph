@@ -1,20 +1,47 @@
 import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { showAlert } from '@/components/dialog';
 
 import { Screen, Txt } from '@/components/ui';
-import { isLiveAI, OPENAI_MODEL } from '@/lib/generate';
+import { aiModeLabel, isLiveAI } from '@/lib/generate';
 import { TAB_BAR_SPACE } from '@/components/pill-tab-bar';
 import { useAppStore } from '@/store/app-store';
+import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
-const soon = (what: string) => () => showAlert(what, 'Coming in the full build — not part of the prototype.');
+const soon = (what: string) => () => showAlert(what, 'Coming soon.');
 
 export default function Settings() {
-  const { credits, addCredits, resetOnboarding, resetAll } = useAppStore();
+  const { credits, backend, addCredits, resetOnboarding, resetAll } = useAppStore();
+  const auth = useAuth();
+
+  const signOut = () =>
+    showAlert('Sign out?', 'Your redesigns stay saved to your account.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', onPress: () => auth.signOut().then(() => router.replace('/sign-in')) },
+    ]);
+
+  const deleteAccount = () =>
+    showAlert('Delete account?', 'This permanently deletes your account, your redesigns and any remaining credits. It can’t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          auth
+            .deleteAccount()
+            .then(() => {
+              resetAll();
+              router.replace('/onboarding');
+            })
+            .catch((e: Error) => showAlert('Something went wrong', e.message)),
+      },
+    ]);
 
   return (
     <Screen edges={['top']}>
@@ -24,7 +51,11 @@ export default function Settings() {
         </Txt>
 
         <Group title="Account">
-          <Row icon="user" label="Sign in" detail="Apple · Google" onPress={soon('Sign in')} />
+          {backend ? (
+            <Row icon="user" label={auth.email ?? 'Signed in'} detail="Sign out" onPress={signOut} />
+          ) : (
+            <Row icon="user" label="Sign in" detail="Apple · Google" onPress={soon('Sign in')} />
+          )}
           <Row icon="zap" label="Credits" detail={`${credits}`} onPress={() => router.push('/paywall')} />
           <Row icon="rotate-ccw" label="Restore purchases" onPress={soon('Restore purchases')} />
         </Group>
@@ -36,35 +67,42 @@ export default function Settings() {
             icon="trash-2"
             label="Delete account"
             danger
-            onPress={() =>
-              showAlert('Delete account?', 'In the prototype this wipes all local data and history.', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: resetAll },
-              ])
+            onPress={
+              backend
+                ? deleteAccount
+                : () =>
+                    showAlert('Delete account?', 'In the prototype this wipes all local data and history.', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: resetAll },
+                    ])
             }
           />
         </Group>
 
-        <Group title="Prototype tools">
+        {!backend && (
+          <Group title="Prototype tools">
           <Row
             icon="cpu"
             label="AI mode"
-            detail={isLiveAI() ? `Live · ${OPENAI_MODEL}` : 'Mock'}
+            detail={aiModeLabel()}
             onPress={() =>
               showAlert(
                 'AI mode',
-                isLiveAI()
+                backend
+                  ? 'Server mode: redesigns are made by the Roomorph backend, which checks your credits and keeps the AI key off the phone.'
+                  : isLiveAI()
                   ? 'Live mode: generations call OpenAI directly using the key in .env. Prototype only — never ship a key inside the app.'
                   : 'Mock mode: add EXPO_PUBLIC_OPENAI_API_KEY to a .env file and restart Expo to generate real redesigns.',
               )
             }
           />
-          <Row icon="plus-circle" label="Add 10 test credits" onPress={() => addCredits(10)} />
+          {!backend && <Row icon="plus-circle" label="Add 10 test credits" onPress={() => addCredits(10)} />}
           <Row icon="play-circle" label="Replay onboarding" onPress={resetOnboarding} />
-        </Group>
+          </Group>
+        )}
 
         <Txt variant="small" style={{ textAlign: 'center', marginTop: spacing.xl, fontSize: 12 }}>
-          Roomorph · prototype v0.1
+          Roomorph · v{Constants.expoConfig?.version}
         </Txt>
       </ScrollView>
     </Screen>

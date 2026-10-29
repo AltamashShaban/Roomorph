@@ -3,7 +3,10 @@
  * Usage: showAlert('Title', 'Message', [{ text: 'OK', onPress }])
  */
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import { Pressable } from '@/components/pressable';
 
 import { colors, radii, spacing, type } from '@/theme';
 
@@ -33,7 +36,7 @@ export function DialogHost() {
 
   return (
     <Modal visible={!!dialog} transparent animationType="fade" onRequestClose={() => setDialog(null)}>
-      <View style={styles.backdrop}>
+      <GestureHandlerRootView style={styles.backdrop}>
         {dialog && (
           <View style={styles.card}>
             <Text style={[type.h2, { textAlign: 'center' }]}>{dialog.title}</Text>
@@ -58,7 +61,7 @@ export function DialogHost() {
             </View>
           </View>
         )}
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

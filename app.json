@@ -9,7 +9,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.altamash.roomorph",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -49,12 +50,20 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-apple-authentication",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true,
       "baseUrl": "/Roomorph"
+    },
+    "owner": "altamash00786",
+    "extra": {
+      "eas": {
+        "projectId": "a736d54b-7c0f-4bd3-ae20-d0757660a540"
+      }
     }
   }
 }
