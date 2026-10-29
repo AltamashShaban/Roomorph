@@ -58,6 +58,12 @@
       "typedRoutes": false,
       "reactCompiler": true,
       "baseUrl": "/Roomorph"
+    },
+    "owner": "altamash00786",
+    "extra": {
+      "eas": {
+        "projectId": "a736d54b-7c0f-4bd3-ae20-d0757660a540"
+      }
     }
   }
 }
