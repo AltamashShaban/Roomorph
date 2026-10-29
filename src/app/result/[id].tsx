@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { ShopHotspots } from '@/components/shop-hotspots';
 import { getShopItems } from '@/config/shop';
@@ -24,6 +24,7 @@ export default function Result() {
   const { history, deleteRedesign, resetDraft } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [shopMode, setShopMode] = useState(false);
+  const scroller = useRef<ScrollView>(null);
   const r = history.find((h) => h.id === id);
 
   if (!r) {
@@ -104,6 +105,16 @@ export default function Result() {
     router.push('/create/style');
   };
 
+  const canShop = shopItems.length > 0;
+  // First tap shows the price tags on the image; once they're showing, open the full list.
+  const shopLook = () => {
+    if (!shopMode) {
+      setShopMode(true);
+      scroller.current?.scrollTo({ y: 0, animated: true });
+    }
+    else router.push({ pathname: '/shop/[id]', params: { id: r.id } });
+  };
+
   const aspect = r.width / r.height;
   const frameAspect = Math.max(0.75, Math.min(aspect, 1.6));
 
@@ -119,7 +130,7 @@ export default function Result() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView ref={scroller} contentContainerStyle={styles.body}>
         <View>
           {shopMode ? (
             <View style={[styles.shopFrame, { aspectRatio: frameAspect }]}>
@@ -138,36 +149,23 @@ export default function Result() {
             />
           )}
 
-          {shopItems.length > 0 && (
+          {shopMode && (
             <Pressable
-              onPress={() => setShopMode((v) => !v)}
-              accessibilityLabel={shopMode ? 'Hide furniture tags' : 'Shop this look'}
-              style={({ pressed }) => [styles.shopPill, shopMode && styles.shopPillOn, pressed && { opacity: 0.85 }]}>
-              <Feather name={shopMode ? 'x' : 'shopping-bag'} size={14} color={shopMode ? colors.onInk : colors.charcoal} />
-              <Txt variant="label" style={{ fontSize: 10, color: shopMode ? colors.onInk : colors.charcoal }}>
-                {shopMode ? 'Hide tags' : 'Shop this look'}
+              onPress={() => setShopMode(false)}
+              accessibilityLabel="Hide furniture tags"
+              style={({ pressed }) => [styles.shopPill, styles.shopPillOn, pressed && { opacity: 0.85 }]}>
+              <Feather name="x" size={14} color={colors.onInk} />
+              <Txt variant="label" style={{ fontSize: 10, color: colors.onInk }}>
+                Hide tags
               </Txt>
             </Pressable>
           )}
         </View>
 
         {shopMode && (
-          <Pressable
-            onPress={() => router.push({ pathname: '/shop/[id]', params: { id: r.id } })}
-            style={({ pressed }) => [styles.shopBar, pressed && { opacity: 0.85 }]}>
-            <View style={{ flex: 1 }}>
-              <Txt variant="label" style={{ fontSize: 10, color: colors.accent }}>
-                {shopItems.length} new pieces found
-              </Txt>
-              <Txt variant="small" style={{ color: colors.text, marginTop: 2 }}>
-                Tap a tag, or see them all with store links
-              </Txt>
-            </View>
-            <Txt variant="label" style={{ fontSize: 10 }}>
-              View all
-            </Txt>
-            <Feather name="chevron-right" size={16} color={colors.text} />
-          </Pressable>
+          <Txt variant="small" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+            Tap a price tag to find that piece.
+          </Txt>
         )}
 
         <View style={styles.titleRow}>
@@ -192,8 +190,15 @@ export default function Result() {
         )}
 
         <View style={styles.actions}>
-          <Button title="Regenerate" icon="refresh-cw" onPress={regenerate} />
-          <Button title="Try another style" variant="secondary" icon="layers" onPress={anotherStyle} />
+          {canShop && (
+            <Button
+              title={shopMode ? `View all ${shopItems.length} pieces` : 'Shop this look'}
+              icon="shopping-bag"
+              onPress={shopLook}
+            />
+          )}
+          <Button title="Regenerate" variant={canShop ? 'secondary' : 'primary'} icon="refresh-cw" onPress={regenerate} />
+          <Button title="Try another style" variant="ghost" icon="layers" onPress={anotherStyle} />
         </View>
 
         <View style={styles.links}>
@@ -249,15 +254,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   shopPillOn: { backgroundColor: colors.charcoal },
-  shopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceAlt,
-  },
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', marginTop: spacing.xl },
   iconRow: { flexDirection: 'row', gap: spacing.sm },
   round: {
