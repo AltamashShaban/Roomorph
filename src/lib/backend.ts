@@ -5,6 +5,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import type { Quality } from '@/config/options';
+import type { ShopItem } from '@/config/shop';
 import { supabase } from '@/lib/supabase';
 
 const BUCKET = 'redesigns';
@@ -68,7 +69,7 @@ export async function generateOnServer(input: ServerGenerateInput) {
     throw new ServerError('Network problem. Check your connection and try again.', 'network');
   }
 
-  return data as { generationId: string; image: string; credits: number };
+  return data as { generationId: string; image: string; credits: number; shopItems?: ShopItem[] };
 }
 
 export type RemoteRedesign = {
@@ -82,13 +83,14 @@ export type RemoteRedesign = {
   createdAt: number;
   beforeUrl?: string;
   afterUrl?: string;
+  shopItems?: ShopItem[];
 };
 
 /** The signed-in user's finished redesigns, with temporary image links. */
 export async function fetchRemoteHistory(): Promise<RemoteRedesign[] | null> {
   const { data, error } = await client()
     .from('generations')
-    .select('id, client_id, style_id, user_prompt, quality, width, height, before_path, after_path, created_at')
+    .select('id, client_id, style_id, user_prompt, quality, width, height, before_path, after_path, shop_items, created_at')
     .eq('status', 'succeeded')
     .order('created_at', { ascending: false })
     .limit(200);
@@ -112,6 +114,7 @@ export async function fetchRemoteHistory(): Promise<RemoteRedesign[] | null> {
     createdAt: new Date(g.created_at).getTime(),
     beforeUrl: g.before_path ? urls.get(g.before_path) : undefined,
     afterUrl: g.after_path ? urls.get(g.after_path) : undefined,
+    shopItems: Array.isArray(g.shop_items) ? g.shop_items : undefined,
   }));
 }
 

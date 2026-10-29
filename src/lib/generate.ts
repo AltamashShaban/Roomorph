@@ -16,6 +16,7 @@ import { buildPrompt } from '@/lib/prompt';
 import { isBackendEnabled } from '@/lib/supabase';
 import { readBase64, writeBase64Image } from '@/lib/image';
 import { toLocalUri } from '@/lib/image-source';
+import type { ShopItem } from '@/config/shop';
 
 export const OPENAI_MODEL = 'gpt-image-2'; // verified against OpenAI docs, Sept 2026
 const API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -42,6 +43,8 @@ export type GenerateOutput = {
   /** server mode: the new balance and the server's id for this redesign */
   credits?: number;
   remoteId?: string;
+  /** server mode: furniture found in the redesign, for Shop this look */
+  shopItems?: ShopItem[];
 };
 
 export class GenerationError extends Error {
@@ -75,7 +78,7 @@ export async function generateRedesign(input: GenerateInput): Promise<GenerateOu
         signal: input.signal,
       });
       const afterUri = writeBase64Image(out.image, `${input.id}-after.jpg`);
-      return { afterUri, mock: false, latencyMs: Date.now() - started, credits: out.credits, remoteId: out.generationId };
+      return { afterUri, mock: false, latencyMs: Date.now() - started, credits: out.credits, remoteId: out.generationId, shopItems: out.shopItems };
     } catch (e) {
       if (e instanceof ServerError) {
         throw new GenerationError(e.code === 'cancelled' ? 'Cancelled' : e.message, e.code, e.credits, e.refunded);

@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
 
 import { ShopHotspots } from '@/components/shop-hotspots';
-import { getShopItems } from '@/config/shop';
+import { getShopItems, shopImageAspect } from '@/config/shop';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Pressable } from '@/components/pressable';
 
@@ -39,8 +39,8 @@ export default function Result() {
   }
 
   const style = getStyle(r.styleId);
-  // Prototype: tags are placed on the style's sample image, so only sample results get them.
-  const shopItems = r.mock ? getShopItems(r.styleId) : [];
+  // Real redesigns carry the pieces the server found; sample results use the hand-placed tags.
+  const shopItems = r.shopItems ?? (r.mock ? getShopItems(r.styleId) : []);
 
 
   const save = async () => {
@@ -137,7 +137,7 @@ export default function Result() {
               <Image source={imageSource(r.afterUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
               <ShopHotspots
                 items={shopItems}
-                imageAspect={1}
+                imageAspect={shopImageAspect(r)}
                 onPressItem={(it) => router.push({ pathname: '/shop/[id]', params: { id: r.id, item: it.id } })}
               />
             </View>

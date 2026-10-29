@@ -6,7 +6,8 @@
  * 2. Takes the credits atomically (refused if the balance is too low).
  * 3. Builds the prompt from the shared catalogue and calls the OpenAI image API.
  * 4. On failure refunds the credits; on success stores before/after images.
- * Returns { generationId, image (base64 JPEG), credits }.
+ * 5. Asks a small vision model which new pieces are in the result (for Shop this look).
+ * Returns { generationId, image (base64 JPEG), credits, shopItems }.
  *
  * Secrets: OPENAI_API_KEY (set with `supabase secrets set`).
  * SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
@@ -20,6 +21,7 @@ const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE
 });
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const MAX_IMAGE_BASE64 = 8 * 1024 * 1024; // ~6 MB JPEG; the app sends ≤1536px images
+const SHOP_MODEL = 'gpt-5.4-mini'; // finds the furniture in the result; well under 1 cent per redesign
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -109,11 +111,13 @@ Deno.serve(async (req) => {
   }
 
   // ---- store both images (best effort: the user still gets their result if storage hiccups)
+  // and find the furniture for Shop this look at the same time (best effort too)
   const beforePath = `${user.id}/${gen.id}-before.jpg`;
   const afterPath = `${user.id}/${gen.id}-after.jpg`;
-  const [beforeUp, afterUp] = await Promise.all([
+  const [beforeUp, afterUp, shopItems] = await Promise.all([
     admin.storage.from('redesigns').upload(beforePath, decodeBase64(image), { contentType: 'image/jpeg', upsert: true }),
     admin.storage.from('redesigns').upload(afterPath, decodeBase64(result.b64), { contentType: 'image/jpeg', upsert: true }),
+    findShopItems(result.b64, STYLE_PROMPTS[styleId].name),
   ]);
 
   await admin
@@ -123,10 +127,11 @@ Deno.serve(async (req) => {
       latency_ms: Date.now() - started,
       before_path: beforeUp.error ? null : beforePath,
       after_path: afterUp.error ? null : afterPath,
+      shop_items: shopItems,
     })
     .eq('id', gen.id);
 
-  return json(200, { generationId: gen.id, image: result.b64, credits: balanceAfterSpend });
+  return json(200, { generationId: gen.id, image: result.b64, credits: balanceAfterSpend, shopItems });
 });
 
 type OpenAIResult =
@@ -165,6 +170,89 @@ async function callOpenAI(opts: { image: string; prompt: string; quality: Qualit
   const b64 = body?.data?.[0]?.b64_json;
   if (!b64) return { ok: false, status: 502, code: 'upstream_empty', message: 'No image came back. Please try again.', detail: 'empty data' };
   return { ok: true, b64 };
+}
+
+type ShopItem = { id: string; name: string; category: string; x: number; y: number; priceMin: number; priceMax: number; query: string };
+
+const SHOP_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['items'],
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['name', 'category', 'x', 'y', 'priceMin', 'priceMax', 'query'],
+        properties: {
+          name: { type: 'string' },
+          category: { type: 'string' },
+          x: { type: 'number' },
+          y: { type: 'number' },
+          priceMin: { type: 'number' },
+          priceMax: { type: 'number' },
+          query: { type: 'string' },
+        },
+      },
+    },
+  },
+};
+
+/** The main furniture and decor pieces in the redesign, with where they are and a rough price. Empty on any failure. */
+async function findShopItems(b64: string, styleName: string): Promise<ShopItem[]> {
+  const instructions = [
+    `This is an AI-redesigned room in a ${styleName} style.`,
+    'List up to 6 of the most noticeable furniture, lighting and decor pieces someone might want to buy (no walls, floors, windows or built-in fixtures).',
+    'For each: a short shoppable name with colour and material (e.g. "Light oak two-tier coffee table"), a one or two word category,',
+    'x and y = the centre of the piece as a fraction of the image width and height (0,0 is top-left),',
+    'a rough typical US retail price range in whole dollars, and a short store search query.',
+  ].join(' ');
+  try {
+    const res = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: SHOP_MODEL,
+        reasoning: { effort: 'low' },
+        max_output_tokens: 3000,
+        input: [
+          {
+            role: 'user',
+            content: [
+              { type: 'input_text', text: instructions },
+              { type: 'input_image', image_url: `data:image/jpeg;base64,${b64}`, detail: 'low' },
+            ],
+          },
+        ],
+        text: { format: { type: 'json_schema', name: 'shop_items', strict: true, schema: SHOP_SCHEMA } },
+      }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error('shop items failed', res.status, body?.error?.message);
+      return [];
+    }
+    const text = body?.output
+      ?.flatMap((o: any) => o?.content ?? [])
+      .find((c: any) => c?.type === 'output_text')?.text;
+    const items = JSON.parse(text ?? '{}')?.items;
+    if (!Array.isArray(items)) return [];
+    const clamp = (n: number) => Math.min(0.97, Math.max(0.03, Number(n) || 0.5));
+    return items.slice(0, 6).map((it: any, i: number) => ({
+      id: `item${i + 1}`,
+      name: String(it.name).slice(0, 80),
+      category: String(it.category).slice(0, 30),
+      x: clamp(it.x),
+      y: clamp(it.y),
+      priceMin: Math.max(1, Math.round(Number(it.priceMin) || 0)),
+      priceMax: Math.max(1, Math.round(Number(it.priceMax) || Number(it.priceMin) || 0)),
+      query: String(it.query || it.name).slice(0, 100),
+    }));
+  } catch (e) {
+    console.error('shop items failed', String(e));
+    return [];
+  }
 }
 
 async function isFlagged(text: string) {

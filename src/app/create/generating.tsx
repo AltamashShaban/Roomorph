@@ -86,6 +86,7 @@ export default function Generating() {
         quality: draft.quality,
         mock: out.mock,
         createdAt: Date.now(),
+        shopItems: out.shopItems,
       });
       Animated.timing(progress, { toValue: 1, duration: 300, useNativeDriver: false }).start(() =>
         router.replace(`/result/${id}`),

@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { FREE_CREDITS, type Quality } from '@/config/options';
+import type { ShopItem } from '@/config/shop';
 import { deleteRemoteRedesign, fetchCredits, fetchRemoteHistory, type RemoteRedesign } from '@/lib/backend';
 import { deleteImage } from '@/lib/image';
 import { isBackendEnabled } from '@/lib/supabase';
@@ -30,6 +31,8 @@ export type Redesign = {
   createdAt: number;
   /** id of the server copy (backend mode) */
   remoteId?: string;
+  /** furniture found in the redesign (backend mode), for Shop this look */
+  shopItems?: ShopItem[];
 };
 
 export type Draft = {
@@ -83,6 +86,7 @@ function mergeRemote(history: Redesign[], remote: RemoteRedesign[]): Redesign[] 
     return {
       ...h,
       remoteId: r.remoteId,
+      shopItems: h.shopItems ?? r.shopItems,
       beforeUri: isRemoteUri(h.beforeUri) && r.beforeUrl ? r.beforeUrl : h.beforeUri,
       afterUri: isRemoteUri(h.afterUri) && r.afterUrl ? r.afterUrl : h.afterUri,
     };
@@ -101,6 +105,7 @@ function mergeRemote(history: Redesign[], remote: RemoteRedesign[]): Redesign[] 
       quality: r.quality,
       mock: false,
       createdAt: r.createdAt,
+      shopItems: r.shopItems,
     }));
   return [...merged, ...added].sort((a, b) => b.createdAt - a.createdAt);
 }

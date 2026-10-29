@@ -12,7 +12,7 @@ import { Pressable } from '@/components/pressable';
 import { showAlert } from '@/components/dialog';
 import { ItemCrop } from '@/components/shop-hotspots';
 import { Header, Screen, Txt } from '@/components/ui';
-import { formatPrice, getShopItems, priceRange, STORES, type ShopItem } from '@/config/shop';
+import { formatPrice, getShopItems, priceRange, shopImageAspect, STORES, type ShopItem } from '@/config/shop';
 import { getStyle } from '@/config/styles';
 import { imageSource } from '@/lib/image-source';
 import { useAppStore } from '@/store/app-store';
@@ -37,10 +37,10 @@ export default function Shop() {
   }
 
   const style = getStyle(r.styleId);
-  const items = getShopItems(r.styleId);
-  // Pins/crops line up with the sample image (square). Live AI results get
-  // real positions from the detection step in the full build.
-  const canCrop = r.mock;
+  const items = r.shopItems ?? (r.mock ? getShopItems(r.styleId) : []);
+  // Sample results use the square sample image; real results carry positions found on their own image.
+  const canCrop = r.mock || !!r.shopItems;
+  const imageAspect = shopImageAspect(r);
   const total = items.reduce((a, it) => [a[0] + it.priceMin, a[1] + it.priceMax], [0, 0]);
 
   const open = async (store: (typeof STORES)[number], it: ShopItem) => {
@@ -83,7 +83,7 @@ export default function Shop() {
                 }}>
                 <View style={styles.cardTop}>
                   {canCrop ? (
-                    <ItemCrop source={imageSource(r.afterUri)} x={it.x} y={it.y} imageAspect={1} />
+                    <ItemCrop source={imageSource(r.afterUri)} x={it.x} y={it.y} imageAspect={imageAspect} />
                   ) : (
                     <View style={styles.cropFallback}>
                       <Feather name="shopping-bag" size={22} color={colors.muted} />
