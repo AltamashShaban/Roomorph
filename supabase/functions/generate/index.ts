@@ -8,7 +8,9 @@
  * 4. On failure refunds the credits; on success stores before/after images.
  * Returns { generationId, image (base64 JPEG), credits }.
  *
- * Secrets: OPENAI_API_KEY (set with `supabase secrets set`).
+ * Secrets: OPENAI_API_KEY (set with `supabase secrets set`). Optional: DAILY_LIMIT_PER_USER
+ * and DAILY_LIMIT_TOTAL cap redesigns per 24 hours, so a bot or a run of free-credit
+ * sign-ups can't run up the OpenAI bill.
  * SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -20,6 +22,8 @@ const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE
 });
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const MAX_IMAGE_BASE64 = 8 * 1024 * 1024; // ~6 MB JPEG; the app sends ≤1536px images
+const DAILY_LIMIT_PER_USER = Number(Deno.env.get('DAILY_LIMIT_PER_USER')) || 20;
+const DAILY_LIMIT_TOTAL = Number(Deno.env.get('DAILY_LIMIT_TOTAL')) || 200;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -57,6 +61,15 @@ Deno.serve(async (req) => {
   if (image.length > MAX_IMAGE_BASE64) return json(413, { error: 'too_large', message: 'That photo is too large.' });
 
   const cost = QUALITY_SPEC[quality].credits;
+
+  // ---- daily caps (counted from the ledger, which users can't delete from)
+  const limited = await overDailyLimit(user.id);
+  if (limited) {
+    return json(429, {
+      error: 'rate_limited',
+      message: limited === 'user' ? 'You’ve made a lot of redesigns today. Please try again tomorrow.' : 'Roomorph is very busy right now. Please try again later.',
+    });
+  }
 
   // ---- user's words go through moderation first (free endpoint); the image model moderates the photo itself
   if (userPrompt) {
@@ -179,6 +192,16 @@ async function isFlagged(text: string) {
   } catch {
     return false; // moderation outage shouldn't block; the image model still moderates
   }
+}
+
+async function overDailyLimit(userId: string): Promise<'user' | 'total' | null> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const spends = () => admin.from('credit_ledger').select('id', { count: 'exact', head: true }).eq('reason', 'generation').gte('created_at', since);
+  const [mine, all] = await Promise.all([spends().eq('user_id', userId), spends()]);
+  if (mine.error || all.error) return null; // a counting hiccup shouldn't block paying users
+  if ((mine.count ?? 0) >= DAILY_LIMIT_PER_USER) return 'user';
+  if ((all.count ?? 0) >= DAILY_LIMIT_TOTAL) return 'total';
+  return null;
 }
 
 async function currentCredits(userId: string) {
