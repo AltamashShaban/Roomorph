@@ -7,14 +7,14 @@
 
 /** AI prompt fragment per style. Names/descriptions/images live in src/config/styles.ts. */
 export const STYLE_PROMPTS: Record<string, { name: string; prompt: string }> = {
-  modern: { name: 'Modern', prompt: 'clean lines, neutral palette, sleek low-profile furniture, dark stone or marble accents, minimal ornament, warm concealed LED strip lighting' },
-  scandinavian: { name: 'Scandinavian', prompt: 'light oak wood, white walls, cozy knitted textiles, soft greys and sage green, sheer curtains, functional simple furniture, plants, hygge' },
-  industrial: { name: 'Industrial', prompt: 'exposed red brick wall, concrete surfaces, black metal frames and shelving, cognac leather sofa, reclaimed wood, black track lighting, black and white city prints' },
-  bohemian: { name: 'Bohemian', prompt: 'layered patterned rugs and cushions, macramé wall hangings, rattan pendant light, woven poufs, rustic wood, lots of plants, warm terracotta and mustard tones, global decor' },
-  japandi: { name: 'Japandi', prompt: 'Japanese-Scandinavian fusion, low natural wood furniture, linen upholstery, paper lantern, wooden slat wall, muted earthy tones, minimal Japanese art, calm and zen' },
-  retro: { name: 'Retro', prompt: '1970s retro, rust velvet sofa, mustard and olive green, walnut mid-century furniture with tapered legs, mushroom lamps, bold geometric rug, rainbow arch art, record player' },
-  gaming: { name: 'Gaming', prompt: 'gaming lounge, purple and blue RGB LED ambient lighting, neon cove ceiling light, dark velvet sofa, gaming desk with monitor and PC, large wall-mounted TV, collectible shelves, moody atmosphere' },
-  minimalist: { name: 'Minimalist', prompt: 'extremely uncluttered, all-white and warm-white palette, low modular sofa, hidden storage, few essential pieces, lots of negative space, soft recessed lighting' },
+  modern: { name: 'Modern', prompt: 'clean straight lines, warm neutral palette of white, greige and charcoal, sleek low-profile furniture, dark stone or marble surfaces, matte black or brushed brass details, minimal ornament, warm hidden LED lighting' },
+  scandinavian: { name: 'Scandinavian', prompt: 'light oak and birch wood, white or pale grey walls, soft wool and knitted textiles, accents of sage green and dusty blue, sheer linen curtains, simple functional furniture, a few green plants, bright and cozy hygge feel' },
+  industrial: { name: 'Industrial', prompt: 'exposed brick or raw concrete surfaces, black steel frames and open metal shelving, reclaimed wood, cognac leather, Edison bulb and black metal lighting, muted greys and warm browns, loft warehouse feel' },
+  bohemian: { name: 'Bohemian', prompt: 'layered patterned rugs and textiles, rattan and wicker, macramé, carved rustic wood, many plants, warm terracotta, mustard and ochre tones, eclectic global decor, relaxed and collected feel' },
+  japandi: { name: 'Japandi', prompt: 'Japanese and Scandinavian fusion, low natural wood furniture, linen and paper textures, wooden slat details, muted earthy tones of sand, clay and soft black, very little decor, calm and serene' },
+  retro: { name: 'Retro', prompt: '1970s retro, walnut mid-century furniture with tapered legs, rust, mustard and olive green palette, velvet upholstery, mushroom and globe lamps, bold geometric patterns, warm nostalgic lighting' },
+  gaming: { name: 'Gaming', prompt: 'gamer aesthetic, dark matte surfaces, purple and blue RGB LED accent lighting, neon cove lighting, sleek black furniture, tech and collectible display shelves, moody low light with glowing accents' },
+  minimalist: { name: 'Minimalist', prompt: 'extremely uncluttered, white and warm-white palette, handleless hidden storage, only a few essential pieces, smooth plain surfaces, lots of empty space, soft recessed lighting' },
 };
 
 /** Credit cost and OpenAI quality per output quality. */
@@ -40,6 +40,7 @@ export function buildPrompt(styleId: string, userPrompt?: string | null) {
     `Redesign the interior of this room in ${style.name} style. First identify what kind of room it is and keep it that type of room.`,
     'Keep the exact same room architecture: walls, windows, doors, ceiling height, floor plan, camera angle and perspective must stay identical.',
     'Replace and restyle furniture, decor, materials, colors, lighting and textiles only.',
+    'Only add furniture and fixtures that belong in this type of room (for example no sofa in a bathroom, no bed in a kitchen).',
     'Photorealistic interior photography, natural lighting, high detail, magazine quality.',
     'No people, no text, no watermarks, no distorted furniture.',
     '',
