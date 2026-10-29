@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -13,7 +14,7 @@ import { useAppStore } from '@/store/app-store';
 import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
-const soon = (what: string) => () => showAlert(what, 'Coming in the full build — not part of the prototype.');
+const soon = (what: string) => () => showAlert(what, 'Coming soon.');
 
 export default function Settings() {
   const { credits, backend, addCredits, resetOnboarding, resetAll } = useAppStore();
@@ -78,7 +79,8 @@ export default function Settings() {
           />
         </Group>
 
-        <Group title="Prototype tools">
+        {!backend && (
+          <Group title="Prototype tools">
           <Row
             icon="cpu"
             label="AI mode"
@@ -96,10 +98,11 @@ export default function Settings() {
           />
           {!backend && <Row icon="plus-circle" label="Add 10 test credits" onPress={() => addCredits(10)} />}
           <Row icon="play-circle" label="Replay onboarding" onPress={resetOnboarding} />
-        </Group>
+          </Group>
+        )}
 
         <Txt variant="small" style={{ textAlign: 'center', marginTop: spacing.xl, fontSize: 12 }}>
-          Roomorph · prototype v0.1
+          Roomorph · v{Constants.expoConfig?.version}
         </Txt>
       </ScrollView>
     </Screen>

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Modal, StyleSheet, View } from 'react-native';
 import { Pressable } from '@/components/pressable';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StyleCard, StyleThumb } from '@/components/style-card';
@@ -55,6 +56,7 @@ export default function StyleScreen() {
 
       {/* Style detail sheet */}
       <Modal visible={!!preview} transparent animationType="slide" onRequestClose={() => setPreview(null)}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
         <Pressable style={styles.backdrop} onPress={() => setPreview(null)} />
         {preview && (
           <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
@@ -77,6 +79,7 @@ export default function StyleScreen() {
             <Button title="Choose this style" onPress={() => choose(preview)} style={{ marginTop: spacing.xl }} />
           </View>
         )}
+        </GestureHandlerRootView>
       </Modal>
     </Screen>
   );

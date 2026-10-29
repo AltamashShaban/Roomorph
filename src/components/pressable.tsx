@@ -1,15 +1,16 @@
 /**
- * Pressable that keeps working on Android after the app comes back from another
- * app (camera, photo picker, Google sign-in). There, React Native can mis-measure
- * a button's position on screen, so every tap looks like the finger slid off and
- * onPress never fires. A huge press-retention area makes the release always count.
- * Scrolling still cancels a press, as before.
+ * Shared Pressable. On Android it uses react-native-gesture-handler's Pressable:
+ * React Native's own Pressable can stop firing onPress on Android (new architecture)
+ * after the app comes back from another app such as the camera or photo picker.
+ * Elsewhere it is React Native's Pressable. Needs <GestureHandlerRootView> at the
+ * app root and inside every <Modal>.
  */
 import { forwardRef } from 'react';
 import { Platform, Pressable as RNPressable, type PressableProps, type View } from 'react-native';
+import { Pressable as GHPressable } from 'react-native-gesture-handler';
 
-const RETENTION = Platform.OS === 'android' ? 10000 : undefined;
+const Impl = (Platform.OS === 'android' ? GHPressable : RNPressable) as unknown as typeof RNPressable;
 
 export const Pressable = forwardRef<View, PressableProps>(function Pressable(props, ref) {
-  return <RNPressable ref={ref} pressRetentionOffset={RETENTION} {...props} />;
+  return <Impl ref={ref} {...props} />;
 });
