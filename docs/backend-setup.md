@@ -56,3 +56,31 @@ Until real purchases arrive (Phase 2), add credits for a tester in the SQL edito
 ```sql
 select grant_credits('<user id>', 10, 'admin', 'test:' || gen_random_uuid());
 ```
+
+## Before launch: security checklist
+
+Run through this before every store upload.
+
+- **OpenAI key lives only in Supabase secrets.** `.env.local` and EAS environment
+  variables must not contain `EXPO_PUBLIC_OPENAI_API_KEY` (the build now refuses if they do).
+  Use a separate OpenAI *project* key for production with a monthly budget, and keep
+  auto-recharge off so the prepaid balance is a hard cap.
+- **Never put the service role key in the app.** Only the publishable (anon) key goes in
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Search the repo for `service_role` and `sk-` before a release.
+- **Daily caps.** The `generate` function allows 20 redesigns per user and 200 in total per
+  24 hours by default. Change them as you grow:
+  ```bash
+  npx supabase secrets set DAILY_LIMIT_PER_USER=20 DAILY_LIMIT_TOTAL=200
+  ```
+- **Supabase Security Advisor** (Dashboard → Advisors → Security) should show no errors,
+  in particular no table without row level security.
+- **Sign-up abuse.** Every new account gets 2 free credits. Watch *Authentication → Users*
+  for bursts of sign-ups from throwaway email domains. If it happens, turn on CAPTCHA
+  (*Authentication → Attack Protection*, Cloudflare Turnstile is free) and lower the
+  email OTP rate limit (*Authentication → Rate Limits*).
+- **Purchases (Phase 2)** must grant credits only from the RevenueCat webhook on the
+  server, with the webhook's authorization header checked and the store transaction id
+  as `external_ref`, never from the app.
+- **Store forms.** Google Play *Data safety* and Apple *App Privacy* must say the app
+  collects email and room photos, sends photos to OpenAI for processing, and lets users
+  delete their account in Settings.
