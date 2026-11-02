@@ -1,13 +1,15 @@
 /**
  * Sign in (backend mode). Shown after onboarding when there's no session.
  * Apple (iOS) or Google. Email codes stay off until custom email sending is set up.
+ * Long-pressing the wordmark shows an email + password form. It exists only for the
+ * Google Play review account (store reviewers can't use their own Google accounts).
  */
 import { AntDesign } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { Pressable } from '@/components/pressable';
 
 import { showAlert } from '@/components/dialog';
@@ -21,6 +23,9 @@ const ART = require('../../assets/brand/living.jpg');
 export default function SignIn() {
   const auth = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
+  const [reviewer, setReviewer] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const attempt = async (key: string, fn: () => Promise<void>, onDone?: () => void) => {
     setBusy(key);
@@ -41,7 +46,9 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={styles.body}>
-        <Wordmark width={150} />
+        <Pressable onLongPress={() => setReviewer((v) => !v)} delayLongPress={800} accessibilityLabel="Roomorph">
+          <Wordmark width={150} />
+        </Pressable>
         <View style={styles.art}>
           <Image source={ART} style={{ flex: 1 }} contentFit="cover" />
         </View>
@@ -63,6 +70,34 @@ export default function SignIn() {
             style={styles.apple}
             onPress={() => attempt('apple', auth.signInWithApple, done)}
           />
+        )}
+        {reviewer && (
+          <View style={{ gap: spacing.sm }}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              style={styles.input}
+            />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              style={styles.input}
+            />
+            <Pressable
+              onPress={() => attempt('password', () => auth.signInWithPassword(email, password), done)}
+              disabled={!!busy || !email || !password}
+              style={({ pressed }) => [styles.google, (pressed || busy === 'password') && { opacity: 0.7 }]}>
+              <Txt style={[type.button, { color: colors.text }]}>{busy === 'password' ? 'Signing in…' : 'Sign in'}</Txt>
+            </Pressable>
+          </View>
         )}
         <Pressable
           onPress={() => attempt('google', auth.signInWithGoogle, done)}
@@ -95,6 +130,15 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm, gap: spacing.md },
   apple: { height: 54, width: '100%' },
+  input: {
+    height: 50,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    color: colors.text,
+  },
   google: {
     height: 54,
     borderRadius: radii.sm,

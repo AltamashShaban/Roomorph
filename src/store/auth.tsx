@@ -23,6 +23,7 @@ type Auth = {
   email?: string;
   sendEmailCode: (email: string) => Promise<void>;
   verifyEmailCode: (email: string, code: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
   appleAvailable: boolean;
   signInWithApple: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -73,6 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       verifyEmailCode: async (email, code) => {
         const { error } = await client().auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
+        if (error) throw error;
+      },
+
+      // Only for the Google Play review account, which is created by hand in Supabase.
+      signInWithPassword: async (email, password) => {
+        const { error } = await client().auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
       },
 
