@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Pressable } from '@/components/pressable';
@@ -15,6 +16,7 @@ import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
 const soon = (what: string) => () => showAlert(what, 'Coming soon.');
+const openPage = (path: string) => () => void WebBrowser.openBrowserAsync(`https://roomorph.netlify.app/${path}/`);
 
 export default function Settings() {
   const { credits, backend, addCredits, resetOnboarding, resetAll } = useAppStore();
@@ -61,8 +63,8 @@ export default function Settings() {
         </Group>
 
         <Group title="About">
-          <Row icon="shield" label="Privacy policy" onPress={soon('Privacy policy')} />
-          <Row icon="file-text" label="Terms of use" onPress={soon('Terms of use')} />
+          <Row icon="shield" label="Privacy policy" onPress={openPage('privacy')} />
+          <Row icon="file-text" label="Terms of use" onPress={openPage('terms')} />
           <Row
             icon="trash-2"
             label="Delete account"
