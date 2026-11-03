@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Roomorph",
+    "name": "Roomsera",
     "slug": "roomorph",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -46,15 +46,15 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Roomorph uses the camera to photograph the room you want to redesign.",
-          "photosPermission": "Roomorph needs access to choose a photo of the room you want to redesign.",
+          "cameraPermission": "Roomsera uses the camera to photograph the room you want to redesign.",
+          "photosPermission": "Roomsera needs access to choose a photo of the room you want to redesign.",
           "microphonePermission": false
         }
       ],
       [
         "expo-media-library",
         {
-          "savePhotosPermission": "Roomorph saves your redesigns to your photo library.",
+          "savePhotosPermission": "Roomsera saves your redesigns to your photo library.",
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": []
         }

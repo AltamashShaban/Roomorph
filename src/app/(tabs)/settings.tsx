@@ -16,7 +16,7 @@ import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
 const soon = (what: string) => () => showAlert(what, 'Coming soon.');
-const openPage = (path: string) => () => void WebBrowser.openBrowserAsync(`https://roomorph.netlify.app/${path}/`);
+const openPage = (path: string) => () => void WebBrowser.openBrowserAsync(`https://roomsera.app/${path}/`);
 
 export default function Settings() {
   const { credits, backend, addCredits, resetOnboarding, resetAll } = useAppStore();
@@ -91,7 +91,7 @@ export default function Settings() {
               showAlert(
                 'AI mode',
                 backend
-                  ? 'Server mode: redesigns are made by the Roomorph backend, which checks your credits and keeps the AI key off the phone.'
+                  ? 'Server mode: redesigns are made by the Roomsera backend, which checks your credits and keeps the AI key off the phone.'
                   : isLiveAI()
                   ? 'Live mode: generations call OpenAI directly using the key in .env. Prototype only — never ship a key inside the app.'
                   : 'Mock mode: add EXPO_PUBLIC_OPENAI_API_KEY to a .env file and restart Expo to generate real redesigns.',
@@ -104,7 +104,7 @@ export default function Settings() {
         )}
 
         <Txt variant="small" style={{ textAlign: 'center', marginTop: spacing.xl, fontSize: 12 }}>
-          Roomorph · v{Constants.expoConfig?.version}
+          Roomsera · v{Constants.expoConfig?.version}
         </Txt>
       </ScrollView>
     </Screen>

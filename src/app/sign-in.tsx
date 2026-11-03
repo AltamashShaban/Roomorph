@@ -46,7 +46,7 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={styles.body}>
-        <Pressable onLongPress={() => setReviewer((v) => !v)} delayLongPress={800} accessibilityLabel="Roomorph">
+        <Pressable onLongPress={() => setReviewer((v) => !v)} delayLongPress={800} accessibilityLabel="Roomsera">
           <Wordmark width={150} />
         </Pressable>
         <View style={styles.art}>

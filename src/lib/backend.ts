@@ -1,5 +1,5 @@
 /**
- * Calls to the Roomorph backend (Supabase). Only used when the backend is
+ * Calls to the Roomsera backend (Supabase). Only used when the backend is
  * configured; see src/lib/supabase.ts.
  */
 import { FunctionsHttpError } from '@supabase/supabase-js';
