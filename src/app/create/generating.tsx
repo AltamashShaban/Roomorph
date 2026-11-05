@@ -41,6 +41,8 @@ const MESSAGES = [
 export default function Generating() {
   const { draft, backend, credits, spendCredits, addCredits, addRedesign, setServerCredits } = useAppStore();
   const [error, setError] = useState<string | null>(null);
+  // The photo itself is the problem (not a room, or gone from the phone): retrying won't help, picking another will.
+  const [needsNewPhoto, setNeedsNewPhoto] = useState(false);
   const [refunded, setRefunded] = useState(0);
   const [msg, setMsg] = useState(0);
   const started = useRef(false);
@@ -54,6 +56,7 @@ export default function Generating() {
 
   const run = async () => {
     setError(null);
+    setNeedsNewPhoto(false);
     setRefunded(0);
     if (!draft.photoUri || !draft.styleId || !draft.width || !draft.height) {
       setError('Something is missing — please start again.');
@@ -115,6 +118,10 @@ export default function Generating() {
         setRefunded(cost);
       }
       if (e instanceof GenerationError && e.message === 'Cancelled') return;
+      const msg = e instanceof Error ? e.message : '';
+      setNeedsNewPhoto(
+        (e instanceof GenerationError && e.code === 'not_a_room') || /ENOENT|FileNotFound|No such file|does not exist/i.test(msg),
+      );
       setError(friendlyError(e));
     }
   };
@@ -191,7 +198,11 @@ export default function Generating() {
       <View style={styles.footer}>
         {error ? (
           <>
-            <Button title="Try again" icon="refresh-cw" onPress={run} />
+            {needsNewPhoto ? (
+              <Button title="Choose another photo" icon="camera" onPress={() => router.replace('/create/capture')} />
+            ) : (
+              <Button title="Try again" icon="refresh-cw" onPress={run} />
+            )}
             <Button title="Go back" variant="secondary" onPress={() => router.back()} />
           </>
         ) : (

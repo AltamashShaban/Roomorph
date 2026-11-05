@@ -66,6 +66,14 @@ Deno.serve(async (req) => {
     if (flagged) return json(422, { error: 'moderation_blocked', message: 'Those details can’t be used. Try rewording them.' });
   }
 
+  // ---- make sure the photo shows a room before spending credits (cheap check; lets the photo through if the check itself fails)
+  if (!(await looksLikeRoom(image))) {
+    return json(422, {
+      error: 'not_a_room',
+      message: 'This doesn’t look like a room. Try a photo of an indoor space, like a bedroom or living room. No credits were used.',
+    });
+  }
+
   // ---- record the request and take the credits
   const { data: gen, error: insertError } = await admin
     .from('generations')
@@ -252,6 +260,55 @@ async function findShopItems(b64: string, styleName: string): Promise<ShopItem[]
   } catch (e) {
     console.error('shop items failed', String(e));
     return [];
+  }
+}
+
+/** True unless the photo clearly isn't an indoor room. Any error counts as a room so a hiccup never blocks a real redesign. */
+async function looksLikeRoom(b64: string): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: SHOP_MODEL,
+        reasoning: { effort: 'low' },
+        max_output_tokens: 500,
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text:
+                  'Is this a photo of an indoor room or interior space that could be redecorated (bedroom, living room, kitchen, office, bathroom, hallway, even if empty, dark or messy)? ' +
+                  'Answer false for selfies, people, pets, food, documents, screenshots, outdoor scenes, single objects in close-up, or anything else that is not a room.',
+              },
+              { type: 'input_image', image_url: `data:image/jpeg;base64,${b64}`, detail: 'low' },
+            ],
+          },
+        ],
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'room_check',
+            strict: true,
+            schema: { type: 'object', additionalProperties: false, required: ['is_room'], properties: { is_room: { type: 'boolean' } } },
+          },
+        },
+      }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error('room check failed', res.status, body?.error?.message);
+      return true;
+    }
+    const text = body?.output
+      ?.flatMap((o: any) => o?.content ?? [])
+      .find((c: any) => c?.type === 'output_text')?.text;
+    return JSON.parse(text ?? '{}')?.is_room !== false;
+  } catch (e) {
+    console.error('room check failed', String(e));
+    return true;
   }
 }
 
