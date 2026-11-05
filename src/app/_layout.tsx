@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DialogHost } from '@/components/dialog';
+import { UpdateRequired, useUpdateRequired } from '@/components/update-gate';
 import { AppStoreProvider, useAppStore } from '@/store/app-store';
 import { AuthProvider, useAuth } from '@/store/auth';
 import { colors } from '@/theme';
@@ -49,6 +50,7 @@ function RootNavigator() {
     Inter_600SemiBold,
   });
 
+  const updateRequired = useUpdateRequired();
   const ready = hydrated && fontsLoaded && auth.ready;
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -71,6 +73,7 @@ function RootNavigator() {
   }, [ready, needsSignIn, pathname]);
 
   if (!ready) return null;
+  if (updateRequired) return <UpdateRequired />;
 
   return (
     <>

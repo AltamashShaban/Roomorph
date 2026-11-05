@@ -3,6 +3,14 @@
     "name": "Roomsera",
     "slug": "roomorph",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a736d54b-7c0f-4bd3-ae20-d0757660a540",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "roomorph",
