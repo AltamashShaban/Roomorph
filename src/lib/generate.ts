@@ -11,10 +11,10 @@
  *    photo so the whole flow can be demoed.
  */
 import { QUALITY, type Quality } from '@/config/options';
-import { generateOnServer, ServerError } from '@/lib/backend';
+import { generateOnServer, ServerError, uploadPhoto } from '@/lib/backend';
 import { buildPrompt } from '@/lib/prompt';
 import { isBackendEnabled } from '@/lib/supabase';
-import { readBase64, writeBase64Image } from '@/lib/image';
+import { readBase64, readBytes, writeBase64Image } from '@/lib/image';
 import { toLocalUri } from '@/lib/image-source';
 import type { ShopItem } from '@/config/shop';
 
@@ -61,15 +61,32 @@ export class GenerationError extends Error {
   }
 }
 
+/** Photos already uploaded this session: local photo uri → storage path. */
+const uploadedPhotos = new Map<string, string>();
+
 export async function generateRedesign(input: GenerateInput): Promise<GenerateOutput> {
   const started = Date.now();
 
   if (isBackendEnabled()) {
-    const image = await readBase64(await toLocalUri(input.photoUri));
+    const localUri = await toLocalUri(input.photoUri);
+    // Upload the photo to storage first (smaller, and "Try again" reuses it). If that
+    // fails for any reason, fall back to sending it inline like older builds did.
+    let imagePath = uploadedPhotos.get(input.photoUri);
+    if (!imagePath) {
+      try {
+        imagePath = await uploadPhoto(await readBytes(localUri), input.signal);
+        uploadedPhotos.set(input.photoUri, imagePath);
+      } catch {
+        if (input.signal?.aborted) throw new GenerationError('Cancelled');
+        imagePath = undefined;
+      }
+    }
+    const image = imagePath ? undefined : await readBase64(localUri);
     try {
       const out = await generateOnServer({
         clientId: input.id,
         imageBase64: image,
+        imagePath,
         width: input.width,
         height: input.height,
         styleId: input.styleId,
@@ -81,6 +98,7 @@ export async function generateRedesign(input: GenerateInput): Promise<GenerateOu
       return { afterUri, mock: false, latencyMs: Date.now() - started, credits: out.credits, remoteId: out.generationId, shopItems: out.shopItems };
     } catch (e) {
       if (e instanceof ServerError) {
+        if (e.code === 'upload_missing') uploadedPhotos.delete(input.photoUri);
         throw new GenerationError(e.code === 'cancelled' ? 'Cancelled' : e.message, e.code, e.credits, e.refunded);
       }
       throw new GenerationError('Something went wrong. Please try again.');

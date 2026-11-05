@@ -1,6 +1,6 @@
 /**
  * POST /functions/v1/generate
- * Body: { clientId, image (base64 JPEG), width, height, styleId, userPrompt?, quality }
+ * Body: { clientId, imagePath (from { action: 'upload_url' }) or image (base64 JPEG), width, height, styleId, userPrompt?, quality }
  *
  * 1. Checks who is calling (Supabase session token).
  * 2. Takes the credits atomically (refused if the balance is too low).
@@ -46,7 +46,20 @@ Deno.serve(async (req) => {
   // ---- validate input
   const body = await req.json().catch(() => null);
   const clientId = typeof body?.clientId === 'string' ? body.clientId.slice(0, 64) : '';
-  const image = typeof body?.image === 'string' ? body.image : '';
+  // New builds first ask for a one-time link and upload the photo straight into the user's folder.
+  if (body?.action === 'upload_url') {
+    const path = `${user.id}/uploads/${crypto.randomUUID()}.jpg`;
+    const { data: signed, error: signError } = await admin.storage.from('redesigns').createSignedUploadUrl(path);
+    if (signError || !signed) return json(500, { error: 'server_error', message: 'Something went wrong. Please try again.' });
+    return json(200, { path, token: signed.token });
+  }
+  // ...then send its path. Older builds still send the photo inline as base64.
+  const imagePath = typeof body?.imagePath === 'string' && body.imagePath.startsWith(`${user.id}/uploads/`) ? body.imagePath : '';
+  let image = typeof body?.image === 'string' ? body.image : '';
+  if (!image && imagePath) {
+    image = await downloadAsBase64(imagePath);
+    if (!image) return json(400, { error: 'upload_missing', message: 'Your photo didn’t finish uploading. Please try again.' });
+  }
   const styleId = typeof body?.styleId === 'string' ? body.styleId : '';
   const quality = body?.quality as QualityId;
   const width = Number(body?.width) || null;
@@ -126,6 +139,7 @@ Deno.serve(async (req) => {
     admin.storage.from('redesigns').upload(beforePath, decodeBase64(image), { contentType: 'image/jpeg', upsert: true }),
     admin.storage.from('redesigns').upload(afterPath, decodeBase64(result.b64), { contentType: 'image/jpeg', upsert: true }),
     findShopItems(result.b64, STYLE_PROMPTS[styleId].name),
+    imagePath ? admin.storage.from('redesigns').remove([imagePath]) : null, // the copy above replaces the upload
   ]);
 
   await admin
@@ -329,6 +343,15 @@ async function isFlagged(text: string) {
 async function currentCredits(userId: string) {
   const { data } = await admin.from('profiles').select('credits').eq('id', userId).single();
   return data?.credits ?? 0;
+}
+
+async function downloadAsBase64(path: string) {
+  const { data, error } = await admin.storage.from('redesigns').download(path);
+  if (error || !data) return '';
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
 
 function decodeBase64(b64: string) {

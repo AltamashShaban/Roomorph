@@ -52,6 +52,13 @@ export async function readBase64(uri: string) {
   return new File(uri).base64();
 }
 
+/** The photo's raw bytes, for uploading. */
+export async function readBytes(uri: string): Promise<ArrayBuffer> {
+  if (uri.startsWith('data:') || uri.startsWith('blob:')) return (await fetch(uri)).arrayBuffer();
+  const bytes = await new File(uri).bytes();
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
 export function deleteImage(uri?: string) {
   if (IS_WEB || !uri || uri.startsWith('sample:') || uri.startsWith('http')) return;
   try {

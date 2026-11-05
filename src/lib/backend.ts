@@ -35,7 +35,9 @@ export async function fetchCredits(): Promise<number | null> {
 
 export type ServerGenerateInput = {
   clientId: string;
-  imageBase64: string;
+  /** Either the photo inline (old way) or where it was uploaded in storage (see uploadPhoto). */
+  imageBase64?: string;
+  imagePath?: string;
   width: number;
   height: number;
   styleId: string;
@@ -52,6 +54,7 @@ export async function generateOnServer(input: ServerGenerateInput) {
     body: {
       clientId: input.clientId,
       image: input.imageBase64,
+      imagePath: input.imagePath,
       width: input.width,
       height: input.height,
       styleId: input.styleId,
@@ -70,6 +73,21 @@ export async function generateOnServer(input: ServerGenerateInput) {
   }
 
   return data as { generationId: string; image: string; credits: number; shopItems?: ShopItem[] };
+}
+
+/**
+ * Uploads the photo straight to storage (raw JPEG bytes) through a one-time link
+ * from the server, and returns its path. A retry can reuse the path instead of
+ * sending the photo again.
+ */
+export async function uploadPhoto(bytes: ArrayBuffer, signal?: AbortSignal): Promise<string> {
+  const { data, error } = await client().functions.invoke('generate', { method: 'POST', signal, body: { action: 'upload_url' } });
+  if (error || typeof data?.path !== 'string' || typeof data?.token !== 'string') {
+    throw new ServerError('Couldn’t upload your photo. Check your connection and try again.', 'upload_failed');
+  }
+  const up = await client().storage.from(BUCKET).uploadToSignedUrl(data.path, data.token, bytes, { contentType: 'image/jpeg' });
+  if (up.error) throw new ServerError('Couldn’t upload your photo. Check your connection and try again.', 'upload_failed');
+  return data.path;
 }
 
 export type RemoteRedesign = {
