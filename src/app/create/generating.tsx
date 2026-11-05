@@ -15,6 +15,15 @@ import { QUALITY } from '@/config/options';
 import { getStyle } from '@/config/styles';
 import { generateRedesign, GenerationError, isLiveAI } from '@/lib/generate';
 import { persistImage } from '@/lib/image';
+
+/** Phone file errors are unreadable for people; say what to do instead. */
+function friendlyError(e: unknown) {
+  const msg = e instanceof Error ? e.message : '';
+  if (/ENOENT|FileNotFound|No such file|does not exist/i.test(msg)) {
+    return 'We couldn’t find your photo on this phone. Go back and choose it again.';
+  }
+  return msg || 'Something went wrong.';
+}
 import { sanitizeUserPrompt } from '@/lib/prompt';
 import { imageSource } from '@/lib/image-source';
 import { newId, useAppStore } from '@/store/app-store';
@@ -62,7 +71,7 @@ export default function Generating() {
     const id = newId();
     abort.current = new AbortController();
     try {
-      const beforeUri = draft.photoUri.includes('/redesigns/') || draft.photoUri.startsWith('sample:') ? draft.photoUri : persistImage(draft.photoUri, `${id}-before.jpg`);
+      const beforeUri = draft.photoUri.includes('/redesigns/') || draft.photoUri.startsWith('sample:') ? draft.photoUri : await persistImage(draft.photoUri, `${id}-before.jpg`);
       const out = await generateRedesign({
         id,
         photoUri: beforeUri,
@@ -106,7 +115,7 @@ export default function Generating() {
         setRefunded(cost);
       }
       if (e instanceof GenerationError && e.message === 'Cancelled') return;
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(friendlyError(e));
     }
   };
 

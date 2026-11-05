@@ -29,11 +29,12 @@ function photosDir() {
 }
 
 /** Copy a (cache) image into permanent app storage so history survives restarts. */
-export function persistImage(uri: string, name: string) {
+export async function persistImage(uri: string, name: string) {
   if (IS_WEB || uri.startsWith('sample:') || uri.startsWith('http')) return uri; // self-contained or on the server
   const target = new File(photosDir(), name);
   if (target.exists) target.delete();
-  new File(uri).copy(target);
+  // copy() returns a Promise: without the await, the upload could read the file before it exists (ENOENT).
+  await new File(uri).copy(target);
   return target.uri;
 }
 
