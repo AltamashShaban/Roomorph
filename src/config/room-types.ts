@@ -40,8 +40,10 @@ export type Quality = keyof typeof QUALITY;
 
 export const FREE_CREDITS = 3;
 
+// Launch pricing: close to break-even on gpt-image-2 (Standard ≈ $0.06–0.07 per render
+// incl. the input photo) after the 15% store fee. Raise once we have users.
 export const CREDIT_PACKS = [
-  { id: 'pack_20', credits: 20, price: '$4.99', note: 'Try a few rooms' },
-  { id: 'pack_50', credits: 50, price: '$9.99', note: 'Best value', highlight: true },
-  { id: 'pack_120', credits: 120, price: '$19.99', note: 'Whole-home makeover' },
+  { id: 'pack_10', credits: 10, price: '$0.99', note: 'Try a few rooms' },
+  { id: 'pack_30', credits: 30, price: '$2.49', note: 'Best value', highlight: true },
+  { id: 'pack_75', credits: 75, price: '$5.99', note: 'Whole-home makeover' },
 ];

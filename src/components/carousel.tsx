@@ -5,7 +5,8 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { useRef, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { Txt } from '@/components/ui';
 import { colors, spacing } from '@/theme';

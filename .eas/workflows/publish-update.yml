@@ -1,0 +1,23 @@
+# Sends an over-the-air update to phones that already have the app.
+# How to use: push the commit you want to ship to the branch "ota/production".
+# Only JavaScript changes travel this way. Anything that changes native code
+# (new native library, app.json plugins, permissions) needs a new store build,
+# and "version" in app.json must be bumped so old builds don't get it.
+name: Publish over-the-air update
+
+on:
+  push:
+    branches: ['ota/production']
+
+jobs:
+  publish_update:
+    name: Publish update to production
+    type: update
+    environment: production
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://zvgovtqvjxzhortkjunw.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_rdLRCOFi2u8hur5lsw1fKA_hGG7mdxK
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 218184352628-66lhfoss25dt03i07on3stm107ctpqs8.apps.googleusercontent.com
+    params:
+      channel: production
+      platform: android

@@ -29,11 +29,12 @@ function photosDir() {
 }
 
 /** Copy a (cache) image into permanent app storage so history survives restarts. */
-export function persistImage(uri: string, name: string) {
-  if (IS_WEB || uri.startsWith('sample:')) return uri; // data URI — already self-contained
+export async function persistImage(uri: string, name: string) {
+  if (IS_WEB || uri.startsWith('sample:') || uri.startsWith('http')) return uri; // self-contained or on the server
   const target = new File(photosDir(), name);
   if (target.exists) target.delete();
-  new File(uri).copy(target);
+  // copy() returns a Promise: without the await, the upload could read the file before it exists (ENOENT).
+  await new File(uri).copy(target);
   return target.uri;
 }
 
@@ -51,8 +52,15 @@ export async function readBase64(uri: string) {
   return new File(uri).base64();
 }
 
+/** The photo's raw bytes, for uploading. */
+export async function readBytes(uri: string): Promise<ArrayBuffer> {
+  if (uri.startsWith('data:') || uri.startsWith('blob:')) return (await fetch(uri)).arrayBuffer();
+  const bytes = await new File(uri).bytes();
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
 export function deleteImage(uri?: string) {
-  if (IS_WEB || !uri || uri.startsWith('sample:')) return;
+  if (IS_WEB || !uri || uri.startsWith('sample:') || uri.startsWith('http')) return;
   try {
     if (!uri) return;
     const f = new File(uri);
