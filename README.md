@@ -1,4 +1,4 @@
-# Roomorph — prototype v0.1
+# Roomsera — prototype v0.1
 
 AI interior redesign app (Expo SDK 57 · React Native · TypeScript · Expo Router).
 This is the **prototype**: the full flow works end to end on your phone, with

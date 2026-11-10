@@ -50,7 +50,7 @@ type Store = Persisted & {
   resetAll: () => void;
 };
 
-const KEY = 'roomorph:v2';
+const KEY = 'roomsera:v2';
 const EMPTY_DRAFT: Draft = { quality: 'standard' };
 const DEFAULTS: Persisted = { onboarded: false, credits: FREE_CREDITS, history: [] };
 

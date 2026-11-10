@@ -123,7 +123,7 @@ export default function Shop() {
         <View style={styles.note}>
           <Feather name="info" size={14} color={colors.muted} />
           <Txt variant="small" style={{ flex: 1, fontSize: 12 }}>
-            Prices are estimates for similar items. Stores open in your browser — Roomorph doesn’t sell or ship
+            Prices are estimates for similar items. Stores open in your browser — Roomsera doesn’t sell or ship
             anything.
           </Txt>
         </View>

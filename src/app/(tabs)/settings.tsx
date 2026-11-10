@@ -64,7 +64,7 @@ export default function Settings() {
         </Group>
 
         <Txt variant="small" style={{ textAlign: 'center', marginTop: spacing.xl, fontSize: 12 }}>
-          Roomorph · prototype v0.1
+          Roomsera · prototype v0.1
         </Txt>
       </ScrollView>
     </Screen>

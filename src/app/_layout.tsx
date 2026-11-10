@@ -28,7 +28,7 @@ const FRESH_START_ON_WEB = true;
 if (Platform.OS === 'web' && FRESH_START_ON_WEB) {
   try {
     Object.keys(window.localStorage)
-      .filter((k) => k.startsWith('roomorph:'))
+      .filter((k) => k.startsWith('roomsera:') || k.startsWith('roomorph:'))
       .forEach((k) => window.localStorage.removeItem(k));
   } catch {
     // storage blocked (private mode etc.) — nothing saved to clear

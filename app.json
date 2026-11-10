@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Roomorph",
-    "slug": "roomorph",
+    "name": "Roomsera",
+    "slug": "roomsera",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "roomorph",
+    "scheme": "roomsera",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.altamash.roomorph",
+      "bundleIdentifier": "com.altamash.roomsera",
       "supportsTablet": false
     },
     "android": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.altamash.roomorph"
+      "package": "com.altamash.roomsera"
     },
     "web": {
       "output": "single",
@@ -38,14 +38,14 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Roomorph uses the camera to photograph the room you want to redesign.",
-          "photosPermission": "Roomorph needs access to choose a photo of the room you want to redesign."
+          "cameraPermission": "Roomsera uses the camera to photograph the room you want to redesign.",
+          "photosPermission": "Roomsera needs access to choose a photo of the room you want to redesign."
         }
       ],
       [
         "expo-media-library",
         {
-          "savePhotosPermission": "Roomorph saves your redesigns to your photo library.",
+          "savePhotosPermission": "Roomsera saves your redesigns to your photo library.",
           "isAccessMediaLocationEnabled": false
         }
       ],
