@@ -48,6 +48,25 @@ type Auth = {
 
 export class AuthCancelled extends Error {}
 
+/**
+ * Turn the one-time code from the browser sign in into a session. Both the sign-in screen
+ * (via openAuthSessionAsync) and the auth-callback route (when Android hands the deep link
+ * straight to the app) may see the same code, and a code can be used only once, so share one attempt.
+ */
+const codeExchanges = new Map<string, Promise<void>>();
+export function finishBrowserSignIn(code: string): Promise<void> {
+  let p = codeExchanges.get(code);
+  if (!p) {
+    p = (async () => {
+      if (!supabase) return;
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+    })();
+    codeExchanges.set(code, p);
+  }
+  return p;
+}
+
 const Ctx = createContext<Auth | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -147,8 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const url = new globalThis.URL(result.url);
         const code = url.searchParams.get('code');
         if (!code) throw new Error(url.searchParams.get('error_description') ?? 'Google sign in didn’t finish.');
-        const { error: exchangeError } = await client().auth.exchangeCodeForSession(code);
-        if (exchangeError) throw exchangeError;
+        await finishBrowserSignIn(code);
       },
 
       signOut: async () => {
