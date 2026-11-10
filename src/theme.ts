@@ -1,7 +1,7 @@
 /**
- * Roomorph theme — single source of truth for the look of the app.
+ * Roomsera theme — single source of truth for the look of the app.
  * Reskin everything by editing this file. Values come from the
- * Roomorph moodboard: ivory, sand, taupe, sage, charcoal, terracotta;
+ * Roomsera moodboard: ivory, sand, taupe, sage, charcoal, terracotta;
  * Playfair Display headings, Inter body, wide-tracked uppercase labels.
  */
 

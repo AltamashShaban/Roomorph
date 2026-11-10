@@ -15,6 +15,14 @@ mock payments and no backend yet.
 3. Scan the QR code with your phone camera (iOS) or the Expo Go app (Android).
    Phone and computer must be on the same Wi-Fi. If not, run `npx expo start --tunnel`.
 
+## Production backend (Supabase)
+
+When `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are set,
+the app switches to the real backend: sign in (Apple, Google, email code), credits
+and history on the server, and the AI call made by a server function so no key ships
+in the app. Setup steps: [docs/backend-setup.md](docs/backend-setup.md).
+Without them, the app behaves exactly like the prototype below.
+
 ## Mock vs real AI
 
 - **Mock (default):** generation waits ~4s and returns your photo with a style tint.
@@ -28,11 +36,14 @@ mock payments and no backend yet.
 
 ```
 src/theme.ts              ← colours, type, spacing, radii (reskin here)
-src/config/styles.ts      ← the 8 MVP styles: name, description, AI prompt, palette
+src/config/styles.ts      ← the 8 MVP styles: name, description, palette, images
+supabase/functions/_shared/catalog.ts ← style AI prompts + credit costs (shared by app and server)
+supabase/                 ← database migrations and server functions
 src/config/options.ts     ← prompt chips, quality + credit packs
-src/lib/prompt.ts         ← prompt assembly (moves server-side later)
+src/lib/prompt.ts         ← re-exports the shared prompt builder
 src/lib/generate.ts       ← mock / OpenAI generation
-src/store/app-store.tsx   ← credits, history, draft (local storage for now)
+src/store/app-store.tsx   ← credits, history, draft (server-backed when Supabase is on)
+src/store/auth.tsx        ← sign in (backend mode)
 src/components/           ← Button, Header, Chip, BeforeAfterSlider, StyleCard, Logo
 src/app/                  ← screens (every file = a route)
   onboarding.tsx

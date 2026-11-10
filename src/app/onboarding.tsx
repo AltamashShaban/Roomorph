@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { BeforeAfterSlider } from '@/components/before-after-slider';
 import { Image } from 'expo-image';
@@ -9,6 +10,7 @@ import { Wordmark } from '@/components/logo';
 import { Button, Screen, Txt } from '@/components/ui';
 import { getStyle, SAMPLE_ROOM, STYLES } from '@/config/styles';
 import { useAppStore } from '@/store/app-store';
+import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
 const PAGES = 3;
@@ -20,6 +22,7 @@ export default function Onboarding() {
   // Pages match the scroller's own size (not the window), so they fit any frame.
   const [{ width, height: pageH }, setSize] = useState({ width: 0, height: 0 });
   const { completeOnboarding } = useAppStore();
+  const auth = useAuth();
 
   const lock = useRef(0);
   const goTo = (i: number) => {
@@ -30,6 +33,10 @@ export default function Onboarding() {
 
   const finish = (startCapture: boolean) => {
     completeOnboarding();
+    if (auth.enabled && !auth.session) {
+      router.replace('/sign-in'); // backend: an account comes first (that's where the free credits live)
+      return;
+    }
     router.replace('/');
     if (startCapture) setTimeout(() => router.push('/create/capture'), 50);
   };

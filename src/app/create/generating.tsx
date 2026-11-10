@@ -15,6 +15,15 @@ import { QUALITY } from '@/config/options';
 import { getStyle } from '@/config/styles';
 import { generateRedesign, GenerationError, isLiveAI } from '@/lib/generate';
 import { persistImage } from '@/lib/image';
+
+/** Phone file errors are unreadable for people; say what to do instead. */
+function friendlyError(e: unknown) {
+  const msg = e instanceof Error ? e.message : '';
+  if (/ENOENT|FileNotFound|No such file|does not exist/i.test(msg)) {
+    return 'We couldn’t find your photo on this phone. Go back and choose it again.';
+  }
+  return msg || 'Something went wrong.';
+}
 import { sanitizeUserPrompt } from '@/lib/prompt';
 import { imageSource } from '@/lib/image-source';
 import { newId, useAppStore } from '@/store/app-store';
@@ -30,8 +39,11 @@ const MESSAGES = [
 ];
 
 export default function Generating() {
-  const { draft, spendCredits, addCredits, addRedesign } = useAppStore();
+  const { draft, backend, credits, spendCredits, addCredits, addRedesign, setServerCredits } = useAppStore();
   const [error, setError] = useState<string | null>(null);
+  // The photo itself is the problem (not a room, or gone from the phone): retrying won't help, picking another will.
+  const [needsNewPhoto, setNeedsNewPhoto] = useState(false);
+  const [refunded, setRefunded] = useState(0);
   const [msg, setMsg] = useState(0);
   const started = useRef(false);
   const abort = useRef<AbortController | null>(null);
@@ -44,11 +56,14 @@ export default function Generating() {
 
   const run = async () => {
     setError(null);
+    setNeedsNewPhoto(false);
+    setRefunded(0);
     if (!draft.photoUri || !draft.styleId || !draft.width || !draft.height) {
       setError('Something is missing — please start again.');
       return;
     }
-    if (!spendCredits(cost)) {
+    // Backend: the server takes the credits; here we only check the balance we know about.
+    if (backend ? credits < cost : !spendCredits(cost)) {
       router.replace('/paywall');
       return;
     }
@@ -59,7 +74,7 @@ export default function Generating() {
     const id = newId();
     abort.current = new AbortController();
     try {
-      const beforeUri = draft.photoUri.includes('/redesigns/') || draft.photoUri.startsWith('sample:') ? draft.photoUri : persistImage(draft.photoUri, `${id}-before.jpg`);
+      const beforeUri = draft.photoUri.includes('/redesigns/') || draft.photoUri.startsWith('sample:') ? draft.photoUri : await persistImage(draft.photoUri, `${id}-before.jpg`);
       const out = await generateRedesign({
         id,
         photoUri: beforeUri,
@@ -70,8 +85,10 @@ export default function Generating() {
         quality: draft.quality,
         signal: abort.current.signal,
       });
+      if (out.credits !== undefined) setServerCredits(out.credits);
       addRedesign({
         id,
+        remoteId: out.remoteId,
         beforeUri,
         afterUri: out.afterUri,
         width: draft.width,
@@ -81,15 +98,31 @@ export default function Generating() {
         quality: draft.quality,
         mock: out.mock,
         createdAt: Date.now(),
+        shopItems: out.shopItems,
       });
       Animated.timing(progress, { toValue: 1, duration: 300, useNativeDriver: false }).start(() =>
         router.replace(`/result/${id}`),
       );
     } catch (e) {
-      addCredits(cost); // automatic refund
       progress.stopAnimation();
+      if (backend) {
+        // The server refunds failed generations itself and reports the new balance.
+        if (e instanceof GenerationError && e.credits !== undefined) setServerCredits(e.credits);
+        if (e instanceof GenerationError && e.code === 'insufficient_credits') {
+          router.replace('/paywall');
+          return;
+        }
+        setRefunded(e instanceof GenerationError ? (e.refunded ?? 0) : 0);
+      } else {
+        addCredits(cost); // automatic refund
+        setRefunded(cost);
+      }
       if (e instanceof GenerationError && e.message === 'Cancelled') return;
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      const msg = e instanceof Error ? e.message : '';
+      setNeedsNewPhoto(
+        (e instanceof GenerationError && e.code === 'not_a_room') || /ENOENT|FileNotFound|No such file|does not exist/i.test(msg),
+      );
+      setError(friendlyError(e));
     }
   };
 
@@ -138,9 +171,11 @@ export default function Generating() {
             <Txt variant="small" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
               {error}
             </Txt>
-            <Txt variant="label" style={{ marginTop: spacing.md, color: colors.success }}>
-              Your {cost} {cost === 1 ? 'credit was' : 'credits were'} refunded
-            </Txt>
+            {refunded > 0 && (
+              <Txt variant="label" style={{ marginTop: spacing.md, color: colors.success }}>
+                Your {refunded} {refunded === 1 ? 'credit was' : 'credits were'} refunded
+              </Txt>
+            )}
           </View>
         ) : (
           <View style={styles.text}>
@@ -163,7 +198,11 @@ export default function Generating() {
       <View style={styles.footer}>
         {error ? (
           <>
-            <Button title="Try again" icon="refresh-cw" onPress={run} />
+            {needsNewPhoto ? (
+              <Button title="Choose another photo" icon="camera" onPress={() => router.replace('/create/capture')} />
+            ) : (
+              <Button title="Try again" icon="refresh-cw" onPress={run} />
+            )}
             <Button title="Go back" variant="secondary" onPress={() => router.back()} />
           </>
         ) : (

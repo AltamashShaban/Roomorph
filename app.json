@@ -1,15 +1,24 @@
 {
   "expo": {
-    "name": "Roomorph",
+    "name": "Roomsera",
     "slug": "roomorph",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a736d54b-7c0f-4bd3-ae20-d0757660a540",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "roomorph",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.altamash.roomorph",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +28,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.altamash.roomorph"
+      "package": "com.altamash.roomorph",
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "single",
@@ -38,23 +54,33 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Roomorph uses the camera to photograph the room you want to redesign.",
-          "photosPermission": "Roomorph needs access to choose a photo of the room you want to redesign."
+          "cameraPermission": "Roomsera uses the camera to photograph the room you want to redesign.",
+          "photosPermission": "Roomsera needs access to choose a photo of the room you want to redesign.",
+          "microphonePermission": false
         }
       ],
       [
         "expo-media-library",
         {
-          "savePhotosPermission": "Roomorph saves your redesigns to your photo library.",
-          "isAccessMediaLocationEnabled": false
+          "savePhotosPermission": "Roomsera saves your redesigns to your photo library.",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": []
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-apple-authentication",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true,
       "baseUrl": "/Roomorph"
+    },
+    "owner": "altamash00786",
+    "extra": {
+      "eas": {
+        "projectId": "a736d54b-7c0f-4bd3-ae20-d0757660a540"
+      }
     }
   }
 }

@@ -2,10 +2,10 @@
  * "Shop this look" — the new furniture in each redesign, with estimated prices
  * and store searches for similar items. Ordering happens on the store's own site.
  *
- * PROTOTYPE: items are hand-placed on each style's sample image.
- * PRODUCTION: a vision model detects the new items in the generated image
- * (label + position), then a visual-search / shopping API returns real products
- * and live prices. The UI below stays the same — only `getShopItems` changes.
+ * Sample results: items are hand-placed on each style's sample image (below).
+ * Real redesigns: the generate function asks a vision model to find the new
+ * pieces in the generated image (name, position, rough price) and stores them
+ * with the redesign. Store links are searches, not exact products.
  *
  * x / y are positions on the image from 0 to 1 (0,0 = top-left).
  * Prices are rough USD estimates for the look, not quotes from a store.
@@ -112,6 +112,12 @@ const ITEMS: Record<string, ShopItem[]> = {
 /** Items for a redesign. Prototype: the style's hand-placed sample items. */
 export function getShopItems(styleId: string): ShopItem[] {
   return ITEMS[styleId] ?? [];
+}
+
+/** Shape of the image the tag positions refer to: the square sample, or the generated 3:2 / 2:3 image. */
+export function shopImageAspect(r: { mock: boolean; width: number; height: number }) {
+  if (r.mock) return 1;
+  return r.width >= r.height ? 1536 / 1024 : 1024 / 1536;
 }
 
 export function formatPrice(n: number) {

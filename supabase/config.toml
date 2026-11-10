@@ -1,0 +1,9 @@
+# Supabase CLI config. Only the settings Roomorph changes are listed; everything else uses CLI defaults.
+project_id = "roomorph"
+
+# Both functions check the caller's session themselves (works with old and new Supabase API keys).
+[functions.generate]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false

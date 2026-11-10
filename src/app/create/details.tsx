@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable } from '@/components/pressable';
 
 import { Button, Chip, Header, Screen, Txt } from '@/components/ui';
 import { PROMPT_SUGGESTIONS, QUALITY, type Quality } from '@/config/options';

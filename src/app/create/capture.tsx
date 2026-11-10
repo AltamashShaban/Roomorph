@@ -8,7 +8,6 @@ import { Linking, Platform, StyleSheet, View } from 'react-native';
 import { showAlert } from '@/components/dialog';
 
 import { Button, Header, Screen, Txt } from '@/components/ui';
-import { SAMPLE_ROOM_URI } from '@/config/styles';
 import { prepareImage } from '@/lib/image';
 import { imageSource } from '@/lib/image-source';
 import { useAppStore } from '@/store/app-store';
@@ -24,12 +23,16 @@ export default function Capture() {
   const { draft, updateDraft } = useAppStore();
   const [busy, setBusy] = useState(false);
 
+  const goNext = () => router.push(draft.presetStyle && draft.styleId ? '/create/details' : '/create/style');
+
   const handleAsset = async (asset?: ImagePicker.ImagePickerAsset) => {
     if (!asset) return;
     setBusy(true);
     try {
       const img = await prepareImage(asset.uri, asset.width, asset.height);
       updateDraft({ photoUri: img.uri, width: img.width, height: img.height });
+      // Go straight on: the camera and gallery already let people confirm the shot.
+      goNext();
     } catch {
       showAlert('Could not use that photo', 'Please try another one.');
     } finally {
@@ -54,8 +57,6 @@ export default function Capture() {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
     if (!res.canceled) handleAsset(res.assets[0]);
   };
-
-  const useSample = () => updateDraft({ photoUri: SAMPLE_ROOM_URI, width: 1254, height: 1254 });
 
   const hasPhoto = !!draft.photoUri;
 
@@ -112,7 +113,7 @@ export default function Capture() {
       <View style={styles.footer}>
         {hasPhoto ? (
           <>
-            <Button title="Continue" onPress={() => router.push(draft.presetStyle && draft.styleId ? '/create/details' : '/create/style')} />
+            <Button title="Continue" onPress={goNext} />
             <View style={styles.row}>
               <Button title="Retake" variant="secondary" icon="camera" onPress={takePhoto} style={{ flex: 1 }} />
               <Button title="Gallery" variant="secondary" icon="image" onPress={pickPhoto} style={{ flex: 1 }} />
@@ -122,7 +123,6 @@ export default function Capture() {
           <>
             <Button title="Take a photo" icon="camera" onPress={takePhoto} loading={busy} />
             <Button title="Choose from gallery" variant="secondary" icon="image" onPress={pickPhoto} disabled={busy} />
-            <Button title="Use a sample room" variant="ghost" onPress={useSample} disabled={busy} />
           </>
         )}
       </View>
