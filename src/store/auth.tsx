@@ -129,7 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (e: any) {
             if (e instanceof AuthCancelled) throw e;
             if (isErrorWithCode(e) && (e.code === statusCodes.SIGN_IN_CANCELLED || e.code === statusCodes.IN_PROGRESS)) throw new AuthCancelled();
-            throw e;
+            // Any other native problem (e.g. DEVELOPER_ERROR on some phones): fall back to the browser sign in below.
+            console.warn('Native Google sign in failed, using the browser instead', e?.code ?? e?.message);
           }
         }
 
